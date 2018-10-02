@@ -134,26 +134,34 @@ function fval = getObjFVal(x,functionID)
 if functionID == 1
     %%%% ADD YOUR CODE
 elseif functionID == 2
-    %%%% ADD YOUR CODE
+    fval = 2*x(1)^4 - 3*x(1)*x(2) + 2*x(2)^2 - 2*x(1) + 10*x(2) - 1;
 end
 
 function df = getSens(x,functionID)
 if functionID == 1
-    %%%% ADD YOUR CODE
+    df(1) = 4*x(1) - 3*x(2) - 2;
+    df(2) = -3*x(1) + 4*x(2) + 10
 elseif functionID == 2
     %%%% ADD YOUR CODE
 end
 
 function H = getHess(x,functionID)
 if functionID == 1
-    %%%% ADD YOUR CODE
+    H(1,1) = 4;
+    H(1,2) = -3;
+    H(2,1) = -3;
+    H(2,2) = 4;
 elseif functionID == 2
     %%%% ADD YOUR CODE
 end
 
 function alpha = getalpha(x_init,s,df,H,functionID)
 if functionID == 1
-    %%%% ADD YOUR CODE
+    %df = getSens(x_init);
+    %H = getHess(x_init);
+   num = dot(df, s);
+   den = (s.' * H * s);
+   alpha = num/den;
 elseif functionID == 2
     %%%% ADD YOUR CODE
 end
