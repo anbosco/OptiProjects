@@ -48,11 +48,7 @@ if ind==1
     H=getHess();
     
     for i=1:MaxIter
-        df = getSens(x(:,i),functionID);
-        s = -df;
-        Norm_df = norm(df);
-        alpha = getalpha(x(:,i),s,df,H,functionID);
-        x(:,i+1) = x(:,i) +(alpha*s)/Norm_df
+        df = getSens(x(:,i))
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
     
