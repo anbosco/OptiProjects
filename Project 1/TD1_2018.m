@@ -100,7 +100,7 @@ end
 
 OptSol=x(:,end);
 disp(['The optimal point is: x = ' num2str(OptSol(1)) ', y = ' num2str(OptSol(2)) '.'])
-FVal=getObjFVal(OptSol);
+FVal=getObjFVal(OptSol,functionID);
 disp(['The objective function value is: ' num2str(FVal) '.'])
 
 %Plot the function with the optimization path.
@@ -166,7 +166,7 @@ function fval = getObjFVal(x,functionID)
      %H = getHess(x_init);
     num = dot(df, s);
     den = (s.' * H * s);
-    alpha = num/den;
+    alpha = - num/den;
  elseif functionID == 2
      %%%% ADD YOUR CODE
  end
