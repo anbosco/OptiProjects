@@ -44,20 +44,38 @@ x(:,1)=xinit;               %Put xinit in vector x.
 
 % Methods ------------------------------------------------
 if ind==1
-    disp(' You chose the steepest descent method.')
-    H=getHess();
+    disp(' You chose the steepest descent method.');
     
     for i=1:MaxIter
-        df = getSens(x(:,i))
+        H=getHess(x(:,i), functionID);
+        df = getSens(x(:,i),functionID);
+        s = -df;
+        Norm_df = norm(df);
+        alpha = getalpha(x(:,i),s,df,H,functionID);
+        x(:,i+1) = x(:,i) +(alpha*s)/Norm_df
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
     
 elseif ind==21
     disp(' You chose the conjugate gradient method.')
-    H=getHess();
-    
+    H=getHess(x(:,i), functionID);
+    df_k = getSens(x(:,i),functionID);
+    if(norm(df_k)<Epsilon)
+        break;
+    end    
     for i=1:MaxIter
-       %%%% ADD YOUR CODE
+        if(i==1)
+            d_k = -df_k;
+            alpha = getalpha(x(:,i),d_k,df_k,H,functionID);
+            x(:,i+1) = x(:,i) +(alpha*d_k);
+            d_k_1 = d_k;
+            df_k_1 = df_k;
+        else
+            num = df_k.'*H*d_k_1;
+            denom = d_k_1.'*H*d_k_1;
+            beta = num/denom;
+            d_k = -df_k + beta
+        end
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
 
@@ -96,7 +114,7 @@ end
 
 OptSol=x(:,end);
 disp(['The optimal point is: x = ' num2str(OptSol(1)) ', y = ' num2str(OptSol(2)) '.'])
-FVal=getObjFVal(OptSol);
+FVal=getObjFVal(OptSol,functionID);
 disp(['The objective function value is: ' num2str(FVal) '.'])
 
 %Plot the function with the optimization path.
@@ -131,34 +149,39 @@ text(x(1,end),x(2,end),num2str(ind-1),'horizontalalignment','center','verticalal
 
 
 function fval = getObjFVal(x,functionID)
-if functionID == 1
-    fval = 2*(x(1))^2-3*(x(1)*x(2))+2*(x(2))^2 - 2*x(1)+10*x(2)-1
-elseif functionID == 2
-    %%%% ADD YOUR CODE
-end
+ if functionID == 1
+     fval = 2*(x(1))^2-3*(x(1)*x(2))+2*(x(2))^2 - 2*x(1)+10*x(2)-1;
+ elseif functionID == 2
+     fval = 2*x(1)^4 - 3*x(1)*x(2) + 2*x(2)^2 - 2*x(1) + 10*x(2) - 1;
+ end
 
-function df = getSens(x,functionID)
-if functionID == 1
-    %%%% ADD YOUR CODE
-elseif functionID == 2
-    df(1) = 8*(x(1)^3)-3*x(2)-2;
-    df(2) = -3*x(1)+4*x(2)+10;
-end
+ function df = getSens(x,functionID)
+ if functionID == 1
+     df(1) = 4*x(1) - 3*x(2) - 2;
+     df(2) = -3*x(1) + 4*x(2) + 10
+     df = df.';
+ elseif functionID == 2
+     %%%% ADD YOUR CODE
+ end
 
-function H = getHess(x,functionID)
-if functionID == 1
-    %%%% ADD YOUR CODE
-elseif functionID == 2
-    H(1,1) = 24*(x(1)^2);
-    H(1,2) = -3;
-    H(2,1) = -3;
-    H(2,2) = 4;
-end
+ function H = getHess(x,functionID)
+ if functionID == 1
+     H(1,1) = 4;
+     H(1,2) = -3;
+     H(2,1) = -3;
+     H(2,2) = 4;
+ elseif functionID == 2
+     %%%% ADD YOUR CODE
+ end
 
-function alpha = getalpha(x_init,s,df,H,functionID)
-if functionID == 1
-    %%%% ADD YOUR CODE
-elseif functionID == 2
-    %%%% ADD YOUR CODE
-end
-%%% you can use reshape to only consider vector columns.
+ function alpha = getalpha(x_init,s,df,H,functionID)
+ if functionID == 1
+     %df = getSens(x_init);
+     %H = getHess(x_init);
+    num = dot(df, s);
+    den = (s.' * H * s);
+    alpha = - num/den;
+ elseif functionID == 2
+     %%%% ADD YOUR CODE
+ end
+ %%% you can use reshape to only consider vector columns

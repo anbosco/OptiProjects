@@ -47,7 +47,7 @@ if ind==1
     disp(' You chose the steepest descent method.');
     
     for i=1:MaxIter
-           H=getHess(x(:,i), functionID);
+        H=getHess(x(:,i), functionID);
         df = getSens(x(:,i),functionID);
         s = -df;
         Norm_df = norm(df);
@@ -58,19 +58,48 @@ if ind==1
     
 elseif ind==21
     disp(' You chose the conjugate gradient method.')
-    H=getHess();
-    
     for i=1:MaxIter
-       %%%% ADD YOUR CODE
+        H=getHess(x(:,i), functionID);
+        df_k = getSens(x(:,i),functionID);
+        if(norm(df_k)<Epsilon)
+            break;
+        end    
+        if(i==1)
+            d_k = -df_k;
+        else
+            num = df_k.'*H*d_k_1;
+            denom = d_k_1.'*H*d_k_1;
+            beta = num/denom;
+            d_k = -df_k + beta*d_k_1;            
+        end
+        alpha = getalpha(x(:,i),d_k,df_k,H,functionID);
+        x(:,i+1) = x(:,i) +(alpha*d_k);
+        d_k_1 = d_k;
+        df_k_1 = df_k;
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
 
 elseif ind==22
     disp(' You chose the conjugate direction method using Fletcher-Reeves approximation.')
-    H=getHess();
     
     for i=1:MaxIter
-       %%%% ADD YOUR CODE
+        H=getHess(x(:,i), functionID);
+        df_k = getSens(x(:,i),functionID);
+        if(norm(df_k)<Epsilon)
+            break;
+        end    
+        if(i==1)
+            d_k = -df_k;
+        else
+            num = norm(df_k)^2;
+            denom = norm(df_k_1)^2;
+            beta = num/denom;
+            d_k = -df_k + beta*d_k_1;            
+        end
+        alpha = getalpha(x(:,i),d_k,df_k,H,functionID);
+        x(:,i+1) = x(:,i) +(alpha*d_k);
+        d_k_1 = d_k;
+        df_k_1 = df_k;
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
 
