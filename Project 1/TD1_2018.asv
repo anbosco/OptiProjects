@@ -33,9 +33,9 @@ prompt = '';
 ind = input(prompt);
 
 % Parameters --------------------------------------------------------------------------
-functionID = 1;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
+functionID = 2;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
                             % =2 if min f(x,y)= 2x^4 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
-MaxIter=25;                 %Maximum number of iterations
+MaxIter=100;                 %Maximum number of iterations
 n=2;                        %Dimension of the problem
 xinit=reshape(xinit,2,1);   %Be sure it is a column vector
 Epsilon=1e-4;               %Tolerance
@@ -58,33 +58,48 @@ if ind==1
     
 elseif ind==21
     disp(' You chose the conjugate gradient method.')
-    H=getHess(x(:,i), functionID);
-    df_k = getSens(x(:,i),functionID);
-    if(norm(df_k)<Epsilon)
-        break;
-    end    
     for i=1:MaxIter
+        H=getHess(x(:,i), functionID);
+        df_k = getSens(x(:,i),functionID);
+        if(norm(df_k)<Epsilon)
+            break;
+        end    
         if(i==1)
             d_k = -df_k;
-            alpha = getalpha(x(:,i),d_k,df_k,H,functionID);
-            x(:,i+1) = x(:,i) +(alpha*d_k);
-            d_k_1 = d_k;
-            df_k_1 = df_k;
         else
             num = df_k.'*H*d_k_1;
             denom = d_k_1.'*H*d_k_1;
             beta = num/denom;
-            d_k = -df_k + beta
+            d_k = -df_k + beta*d_k_1;            
         end
+        alpha = getalpha(x(:,i),d_k,df_k,H,functionID);
+        x(:,i+1) = x(:,i) +(alpha*d_k);
+        d_k_1 = d_k;
+        df_k_1 = df_k;
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
 
 elseif ind==22
     disp(' You chose the conjugate direction method using Fletcher-Reeves approximation.')
-    H=getHess();
     
     for i=1:MaxIter
-       %%%% ADD YOUR CODE
+        H=getHess(x(:,i), functionID);
+        df_k = getSens(x(:,i),functionID);
+        if(norm(df_k)<Epsilon)
+            break;
+        end    
+        if(i==1)
+            d_k = -df_k;
+        else
+            num = norm(df_k)^2;
+            denom = norm(df_k_1)^2;
+            beta = num/denom;
+            d_k = -df_k + beta*d_k_1;            
+        end
+        alpha = getalpha(x(:,i),d_k,df_k,H,functionID);
+        x(:,i+1) = x(:,i) +(alpha*d_k);
+        d_k_1 = d_k;
+        df_k_1 = df_k;
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
 
@@ -155,13 +170,15 @@ function fval = getObjFVal(x,functionID)
      fval = 2*x(1)^4 - 3*x(1)*x(2) + 2*x(2)^2 - 2*x(1) + 10*x(2) - 1;
  end
 
- function df = getSens(x,functionID)
+ function df = getSens(x, functionID)
  if functionID == 1
      df(1) = 4*x(1) - 3*x(2) - 2;
-     df(2) = -3*x(1) + 4*x(2) + 10
+     df(2) = -3*x(1) + 4*x(2) + 10;
      df = df.';
  elseif functionID == 2
-     %%%% ADD YOUR CODE
+    df(1) = 8*(x(1)^3)-3*x(2)-2;
+    df(2) = -3*x(1)+4*x(2)+10;
+    df = df.';
  end
 
  function H = getHess(x,functionID)
@@ -171,7 +188,10 @@ function fval = getObjFVal(x,functionID)
      H(2,1) = -3;
      H(2,2) = 4;
  elseif functionID == 2
-     %%%% ADD YOUR CODE
+    H(1,1) = 24*(x(1)^2);
+    H(1,2) = -3;
+    H(2,1) = -3;
+    H(2,2) = 4;
  end
 
  function alpha = getalpha(x_init,s,df,H,functionID)
@@ -182,6 +202,43 @@ function fval = getObjFVal(x,functionID)
     den = (s.' * H * s);
     alpha = - num/den;
  elseif functionID == 2
-     %%%% ADD YOUR CODE
+     alpha_min = 0;
+     h = 1;
+     epsilon = 1e-2;
+     i = 1;
+     rho = 0.6;
+     while(true)
+     GradF = getSens(x_init + (alpha_min + i*h)*s, functionID);
+     
+     PhiPrime = dot(GradF, s);
+     
+     if PhiPrime <= 0
+         i = i+1;
+
+     elseif PhiPrime > 0
+         alpha_max = alpha_min + i*h;
+          alpha_min = (i-1)*h;
+         break;
+     end     
+     end
+     
+     while(true)
+         if(dot(getSens(x_init + alpha_max*s, functionID),s)*dot(getSens(x_init + alpha_min*s, functionID),s)>0)
+            error('Gros connard');
+         end
+              AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
+              GradF = getSens(x_init + AlphaC*s, functionID);
+              PhiPrime = dot(GradF, s);
+              abs(PhiPrime)
+              if( abs(PhiPrime) < epsilon)
+                  alpha = AlphaC
+                  break;
+              
+              elseif(PhiPrime < 0)
+                  alpha_min = AlphaC;
+            elseif(PhiPrime > 0)
+                alpha_max = AlphaC;
+             end
+     end
  end
  %%% you can use reshape to only consider vector columns

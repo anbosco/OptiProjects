@@ -206,38 +206,38 @@ function fval = getObjFVal(x,functionID)
      h = 1;
      epsilon = 1e-2;
      i = 1;
-     rho = 1/2;
+     rho = 0.5;
      while(true)
-     GradF = getSens(x_init + (alpha_min + h)*s, functionID);
+     GradF = getSens(x_init + (alpha_min + i*h)*s, functionID);
      
      PhiPrime = dot(GradF, s);
      
      if PhiPrime <= 0
-         alpha_min = h;
-         h = 2*h;
+         i = i+1;
 
      elseif PhiPrime > 0
-         alpha_max = h;
+         alpha_max = alpha_min + i*h;
+          alpha_min = (i-1)*h;
          break;
-
+     end     
      end
-     
-     end
-     
-     while(true)
+     AlphaC = 100000;
+     PhiPrime = 10000;
+     while(abs(PhiPrime) > epsilon)
+         if(dot(getSens(x_init + alpha_max*s, functionID),s)*dot(getSens(x_init + alpha_min*s, functionID),s)>0)
+             break;
+            error('Erreur');
+         end
               AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
               GradF = getSens(x_init + AlphaC*s, functionID);
               PhiPrime = dot(GradF, s);
-              PhiPrime
-              if( abs(PhiPrime) < epsilon)
-                  alpha = AlphaC
-                  break;
-              
-              elseif(PhiPrime < 0)
+              abs(PhiPrime)              
+              if(PhiPrime < 0)
                   alpha_min = AlphaC;
             elseif(PhiPrime > 0)
                 alpha_max = AlphaC;
              end
      end
+     alpha = AlphaC
  end
  %%% you can use reshape to only consider vector columns
