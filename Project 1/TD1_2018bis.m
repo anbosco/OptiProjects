@@ -211,14 +211,10 @@ function fval = getObjFVal(x,functionID)
      PhiPrime = dot(GradF, s);
      while(PhiPrime <= 0)
          disp('hey')
-     GradF = getSens(x_init + (h)*s, functionID);
-     
+     alpha_min = h;
+     h = 2*h;  
+     GradF = getSens(x_init + (h)*s, functionID);     
      PhiPrime = dot(GradF, s);
-     
-     if PhiPrime <= 0
-         alpha_min = h;
-         h = 2*h;
-     end     
      end
      alpha_max = h;
      %AlphaC = 100000;
