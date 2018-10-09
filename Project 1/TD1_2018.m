@@ -33,9 +33,9 @@ prompt = '';
 ind = input(prompt);
 
 % Parameters --------------------------------------------------------------------------
-functionID = 1;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
+functionID = 2;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
                             % =2 if min f(x,y)= 2x^4 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
-MaxIter=25;                 %Maximum number of iterations
+MaxIter=100;                 %Maximum number of iterations
 n=2;                        %Dimension of the problem
 xinit=reshape(xinit,2,1);   %Be sure it is a column vector
 Epsilon=1e-4;               %Tolerance
@@ -170,13 +170,15 @@ function fval = getObjFVal(x,functionID)
      fval = 2*x(1)^4 - 3*x(1)*x(2) + 2*x(2)^2 - 2*x(1) + 10*x(2) - 1;
  end
 
- function df = getSens(x,functionID)
+ function df = getSens(x, functionID)
  if functionID == 1
      df(1) = 4*x(1) - 3*x(2) - 2;
-     df(2) = -3*x(1) + 4*x(2) + 10
+     df(2) = -3*x(1) + 4*x(2) + 10;
      df = df.';
  elseif functionID == 2
-     %%%% ADD YOUR CODE
+    df(1) = 8*(x(1)^3)-3*x(2)-2;
+    df(2) = -3*x(1)+4*x(2)+10;
+    df = df.';
  end
 
  function H = getHess(x,functionID)
@@ -186,7 +188,10 @@ function fval = getObjFVal(x,functionID)
      H(2,1) = -3;
      H(2,2) = 4;
  elseif functionID == 2
-     %%%% ADD YOUR CODE
+    H(1,1) = 24*(x(1)^2);
+    H(1,2) = -3;
+    H(2,1) = -3;
+    H(2,2) = 4;
  end
 
  function alpha = getalpha(x_init,s,df,H,functionID)
@@ -197,6 +202,42 @@ function fval = getObjFVal(x,functionID)
     den = (s.' * H * s);
     alpha = - num/den;
  elseif functionID == 2
-     %%%% ADD YOUR CODE
+     alpha_min = 0;
+     h = 1;
+     epsilon = 1e-2;
+     i = 1;
+     rho = 1/2;
+     while(true)
+     GradF = getSens(x_init + (alpha_min + h)*s, functionID);
+     
+     PhiPrime = dot(GradF, s);
+     
+     if PhiPrime <= 0
+         alpha_min = h;
+         h = 2*h;
+
+     elseif PhiPrime > 0
+         alpha_max = h;
+         break;
+
+     end
+     
+     end
+     
+     while(true)
+              AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
+              GradF = getSens(x_init + AlphaC*s, functionID);
+              PhiPrime = dot(GradF, s);
+              PhiPrime
+              if( abs(PhiPrime) < epsilon)
+                  alpha = AlphaC
+                  break;
+              
+              elseif(PhiPrime < 0)
+                  alpha_min = AlphaC;
+            elseif(PhiPrime > 0)
+                alpha_max = AlphaC;
+             end
+     end
  end
  %%% you can use reshape to only consider vector columns
