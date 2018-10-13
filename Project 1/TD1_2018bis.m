@@ -67,8 +67,8 @@ elseif ind==21
         if(i==1)
             d_k = -df_k;
         else
-            num = df_k.'*H*d_k_1;
-            denom = d_k_1.'*H*d_k_1;
+            num = norm(df_k)^2;
+            denom = norm(df_k_1)^2;
             beta = num/denom;
             d_k = -df_k + beta*d_k_1;            
         end
@@ -91,7 +91,7 @@ elseif ind==22
         if(i==1)
             d_k = -df_k;
         else
-            num = norm(df_k)^2;
+            num = dot(df_k,(df_k-df_k_1));
             denom = norm(df_k_1)^2;
             beta = num/denom;
             d_k = -df_k + beta*d_k_1; 
