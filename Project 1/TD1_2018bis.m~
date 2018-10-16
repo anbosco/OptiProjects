@@ -107,7 +107,7 @@ elseif ind==22
     x=x(:,1:i); %Remove the zero elements due to the initialization step
 
 elseif ind==3
-    disp(' You chose the Newton method.');
+    disp(' You chose the Newton method.')   `
     disp('armin est nul');
     
     
@@ -117,16 +117,12 @@ elseif ind==3
         H=getHess(x(:,i), functionID);
         df = getSens(x(:,i),functionID);        
         A = H^(-1);
-        alpha = 1;
-         
-        while (getObjFVal(x(:,i) - alpha*A*df ,functionID) > getObjFVal(x(:,i),functionID))
-            alpha = 0.5*alpha;
-        end
-        x(:,i+1) = x(:,i) - alpha*A*df;  
-        if(norm(df)<Epsilon)
+         if(norm(A*df)<Epsilon)
              disp(['Nombre itération : ' num2str(i)]);            
             break;
          end 
+        if 
+        x(:,i+1) = x(:,i) - alpha*A*df;       
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
     	
