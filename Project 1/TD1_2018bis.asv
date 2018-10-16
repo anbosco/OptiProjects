@@ -107,7 +107,8 @@ elseif ind==22
     x=x(:,1:i); %Remove the zero elements due to the initialization step
 
 elseif ind==3
-    disp(' You chose the Newton method.')      
+    disp(' You chose the Newton method.')  
+    
     for i=1:MaxIter
         H=getHess(x(:,i), functionID);
         df = getSens(x(:,i),functionID);        
@@ -116,7 +117,8 @@ elseif ind==3
              disp(['Nombre itération : ' num2str(i)]);            
             break;
         end 
-        x(:,i+1) = x(:,i) - A*df;       
+        x(:,i+1) = x(:,i) - A*df;
+       
     end
     x=x(:,1:i); %Remove the zero elements due to the initialization step
     	
@@ -129,8 +131,9 @@ elseif ind==4
         end  
        s = -H*df;
        alpha = getalpha(x(:,i),s,df,H,functionID)
-       x(:,i+1) = x(:,i) + alpha*s;
-       delta = x(:,i+1)-x(:,i);       
+       x(:,i+1) = x(:,i) 
+       delta = -H*df;
+       x(:,i+1) = x(:,i)+delta;
        df_futur = getSens(x(:,i+1),functionID);
        gamma = df_futur-df;
        df = df_futur;
@@ -142,7 +145,6 @@ elseif ind==4
        denom3 = delta.'*gamma;
        H = H+(1+(num1/denom1))*(num2/denom2)-(num3/denom3);
        if(norm(df)<Epsilon)
-            disp(['Nombre itération : ' num2str(i)]);
             break;
         end 
     end
