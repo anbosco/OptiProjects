@@ -22,7 +22,7 @@
 
 
 function [OptSol,FVal] = TD1_2018bis(xinit)
-
+close all
 disp('Which optimization method do you want to use? Press:')
 disp('     1 for Steepest descent method')
 disp('     21 for Conjugate gradient method')
@@ -33,9 +33,9 @@ prompt = '';
 ind = input(prompt);
 
 % Parameters --------------------------------------------------------------------------
-functionID = 2;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
+functionID = 1;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
                             % =2 if min f(x,y)= 2x^4 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
-MaxIter=100;                 %Maximum number of iterations
+MaxIter = 100;                 %Maximum number of iterations
 n=2;                        %Dimension of the problem
 xinit=reshape(xinit,2,1);   %Be sure it is a column vector
 Epsilon=1e-4;               %Tolerance
@@ -43,31 +43,37 @@ x=zeros(n,MaxIter);         %Initialization of x
 x(:,1)=xinit;               %Put xinit in vector x.
 
 % Methods ------------------------------------------------
+
 if ind==1
-    disp(' You chose the steepest descent method.');
-    
+    %% Steepest descent
+    disp(' You chose the steepest descent method.');    
     for i=1:MaxIter
+        if(i==1)
         H=getHess(x(:,i), functionID);
-        df = getSens(x(:,i),functionID);
-        if(norm(df)<Epsilon)
-            break;
-        end 
+        df = getSens(x(:,i),functionID);   
+        end
         s = -df;
-        Norm_df = norm(df);
         alpha = getalpha(x(:,i),s,df,H,functionID);
-        x(:,i+1) = x(:,i) +(alpha*s)/Norm_df
+        x(:,i+1) = x(:,i) +(alpha*s);
+        H=getHess(x(:,i+1), functionID);
+        df = getSens(x(:,i+1),functionID);
+        if(norm(df)<Epsilon)
+            txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
+            disp(txt);
+            break;
+        elseif(i==MaxIter)      
+            txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
+            error([txt]);
+        end  
     end
-    x=x(:,1:i); %Remove the zero elements due to the initialization step
-    
+    x=x(:,1:i+1); %Remove the zero elements due to the initialization step    
 elseif ind==21
+    %% Gradient method
     disp(' You chose the conjugate gradient method.')
     for i=1:MaxIter
-        H=getHess(x(:,i), functionID);
-        df_k = getSens(x(:,i),functionID);
-        if(norm(df_k)<Epsilon)
-            break;
-        end    
         if(i==1)
+            H = getHess(x(:,i), functionID);
+            df_k = getSens(x(:,i),functionID);
             d_k = -df_k;
         else
             num = norm(df_k)^2;
@@ -79,19 +85,27 @@ elseif ind==21
         x(:,i+1) = x(:,i) +(alpha*d_k);
         d_k_1 = d_k;
         df_k_1 = df_k;
+        H=getHess(x(:,i+1), functionID);
+        df_k = getSens(x(:,i+1),functionID);        
+        if(norm(df_k)<Epsilon)
+            txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
+            disp(txt);
+            break;
+        elseif(i==MaxIter)      
+            txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
+            error([txt]);
+        end        
     end
-    x=x(:,1:i); %Remove the zero elements due to the initialization step
+    x=x(:,1:i+1); %Remove the zero elements due to the initialization step
 
 elseif ind==22
+    %% Fletcher-Reeves
     disp(' You chose the conjugate direction method using Fletcher-Reeves approximation.')
     
     for i=1:MaxIter
-        H=getHess(x(:,i), functionID);
-        df_k = getSens(x(:,i),functionID);
-        if(norm(df_k)<Epsilon)
-            break;
-        end    
-        if(i==1)
+        if i==1
+            H=getHess(x(:,i), functionID);
+            df_k = getSens(x(:,i),functionID);   
             d_k = -df_k;
         else
             num = dot(df_k,(df_k-df_k_1));
@@ -103,34 +117,53 @@ elseif ind==22
         x(:,i+1) = x(:,i) +(alpha*d_k);
         d_k_1 = d_k;
         df_k_1 = df_k;
+        H=getHess(x(:,i+1), functionID);
+        df_k = getSens(x(:,i+1),functionID);          
+        if(norm(df_k)<Epsilon)
+            txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
+            disp(txt);
+            break;
+        elseif(i==MaxIter)      
+            txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
+            error([txt]);
+        end
     end
-    x=x(:,1:i); %Remove the zero elements due to the initialization step
+    x=x(:,1:i+1); %Remove the zero elements due to the initialization step
 
 elseif ind==3
+    %% Newton 
     disp(' You chose the Newton method.');
-    disp('armin est nul');
-    
-    
-    
-    for i=1:MaxIter
-        
-        H=getHess(x(:,i), functionID);
-        df = getSens(x(:,i),functionID);        
-        A = H^(-1);
+    for i=1:MaxIter   
+        if(i==1)
+            H=getHess(x(:,i), functionID);
+            df = getSens(x(:,i),functionID);    
+        end
+        A = H^(-1);     
         alpha = 1;
-         
-        while (getObjFVal(x(:,i) - alpha*A*df ,functionID) > getObjFVal(x(:,i),functionID))
+        if(dot(df,-A*df)<0)  % Verify if it is a descent direction
+            s = -A*df;
+        else
+            s = A*df; 
+        end
+        while (getObjFVal(x(:,i) + alpha*s ,functionID) > getObjFVal(x(:,i),functionID))
             alpha = 0.5*alpha;
         end
-        x(:,i+1) = x(:,i) - alpha*A*df;  
+        x(:,i+1) = x(:,i) + alpha*s;  
+        H=getHess(x(:,i+1), functionID);
+        df = getSens(x(:,i+1),functionID);
         if(norm(df)<Epsilon)
-             disp(['Nombre itération : ' num2str(i)]);            
+            txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
+            disp(txt);
             break;
-         end 
+        elseif(i==MaxIter)      
+            txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
+            error([txt]);
+        end 
     end
-    x=x(:,1:i); %Remove the zero elements due to the initialization step
+    x=x(:,1:i+1); %Remove the zero elements due to the initialization step
     	
 elseif ind==4
+    %% BFGS
     disp(' You chose the quasi-Newton method (Boyden-Fletcher-Goldfard-Shanno (BFGS)).')
     for i=1:MaxIter
         if(i==1)
@@ -138,7 +171,11 @@ elseif ind==4
             df = getSens(x(:,i),functionID);
         end  
        s = -H*df;
-       alpha = getalpha(x(:,i),s,df,H,functionID)
+       if functionID == 2
+           alpha = getalpha(x(:,i),s,df,H,functionID);
+       else
+           alpha = getalpha(x(:,i),s,df,H,12);
+       end
        x(:,i+1) = x(:,i) + alpha*s;
        delta = x(:,i+1)-x(:,i);       
        df_futur = getSens(x(:,i+1),functionID);
@@ -152,11 +189,15 @@ elseif ind==4
        denom3 = delta.'*gamma;
        H = H+(1+(num1/denom1))*(num2/denom2)-(num3/denom3);
        if(norm(df)<Epsilon)
-            disp(['Nombre itération : ' num2str(i)]);
+            txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
+            disp(txt);
             break;
+%         elseif(i==MaxIter)      
+%             txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
+%             error([txt]);
         end 
     end
-    x=x(:,1:i); %Remove the zero elements due to the initialization step
+    x=x(:,1:i+1); %Remove the zero elements due to the initialization step
      
 else
     disp('Error: Your choice does not match the proposed methods.')
@@ -168,10 +209,19 @@ disp(['The optimal point is: x = ' num2str(OptSol(1)) ', y = ' num2str(OptSol(2)
 FVal=getObjFVal(OptSol,functionID);
 disp(['The objective function value is: ' num2str(FVal) '.'])
 
-%Plot the function with the optimization path.
-lb=-5;
-up=5;
-xi=lb:0.1:up;
+%% Plot the function with the optimization path.
+if(functionID==2)
+    lbx=-5;
+    upx=4;
+    lby=-7;
+    upy=2;
+else
+    lbx=-12.5;
+    upx=7.5;
+    lby =lbx;
+    upy = upx;
+end
+xi=lby:0.1:upy;
 f=zeros(length(xi),length(xi));
 for i=1:length(xi)
     for j=1:length(xi)
@@ -179,24 +229,27 @@ for i=1:length(xi)
     end
 end
 figure('name','Optimization path')
+Figure1=figure(1);clf;set(Figure1,'defaulttextinterpreter','latex');
+hold on;
+set(gca,'fontsize',30,'fontname','Times','LineWidth',0.5);
 hold on
 axis equal
-xlabel('x_1')
-ylabel('x_2')
-axis([lb up lb up])
+xlabel('$x_1$')
+ylabel('$x_2$')
+axis([lbx upx lby upy])
 title('Optimization path')
-[C,h]=contour(xi,xi,f,[-4:2:8 10:10:50 75:25:200]);
+[C,h]=contour(xi,xi,f,[-4:2:8 10:10:50 75:25:200],'linewidth', 2);
 clabel(C,h);
 hold on
 ind=1;
 for i=1:size(x,2)-1
-    plot(x(1,i),x(2,i),'.c','markersize',30)
-    plot([x(1,i) x(1,i+1)],[x(2,i) x(2,i+1)],'c','linewidth',2)
-    text(x(1,i),x(2,i),num2str(ind-1),'horizontalalignment','center','verticalalignment','middle')
+    plot(x(1,i),x(2,i),'.b','markersize',50)
+    plot([x(1,i) x(1,i+1)],[x(2,i) x(2,i+1)],'-.k','linewidth',2)
+    text(x(1,i),x(2,i),num2str(ind-1),'horizontalalignment','center','verticalalignment','middle','FontSize',14)
     ind=ind+1;
 end
-plot(x(1,end),x(2,end),'.c','markersize',30)
-text(x(1,end),x(2,end),num2str(ind-1),'horizontalalignment','center','verticalalignment','middle')
+plot(x(1,end),x(2,end),'.r','markersize',50)
+text(x(1,end),x(2,end),num2str(ind-1),'horizontalalignment','center','verticalalignment','middle','FontSize',14)
 
 
 function fval = getObjFVal(x,functionID)
@@ -231,47 +284,97 @@ function fval = getObjFVal(x,functionID)
  end
 
  function alpha = getalpha(x_init,s,df,H,functionID)
+     %%%%%%%%%%%%%%%%%%
  if functionID == 1
-     %df = getSens(x_init);
-     %H = getHess(x_init);
     num = dot(df, s);
     den = (s.' * H * s);
     alpha = - num/den;
+    %%%%%%%%%%%%%%%%%%%%
  elseif functionID == 2
+     desc_dir = 1;
      alpha_min = 0;
-     h = 0.1;
-     epsilon = 1e-4;
-     i = 1;
+     h = 10;
+     epsilon = 1e-10;
      rho = 0.5;
+     if(dot(df,s)>0)
+         desc_dir = 0;
+         s = - s;
+     end
      GradF = getSens(x_init + (h)*s, functionID);
      PhiPrime = dot(GradF, s);
      while(PhiPrime <= 0)
-         disp('hey')
-     alpha_min = h;
-     h = 2*h;  
-     GradF = getSens(x_init + (h)*s, functionID);     
-     PhiPrime = dot(GradF, s);
+         alpha_min = h;
+         h = 2*h;  
+         GradF = getSens(x_init + (h)*s, functionID);     
+         PhiPrime = dot(GradF, s);
      end
      alpha_max = h;
-     %AlphaC = 100000;
-     %PhiPrime = 10000;
-                AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
-              GradF = getSens(x_init + AlphaC*s, functionID);
-              PhiPrime = dot(GradF, s);
+     AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
+     GradF = getSens(x_init + AlphaC*s, functionID);
+     PhiPrime = dot(GradF, s);
      while(abs(PhiPrime) > epsilon)
          if(dot(getSens(x_init + alpha_max*s, functionID),s)*dot(getSens(x_init + alpha_min*s, functionID),s)>0)
-            disp('wut');
+             txt = sprintf('\n\n %s \n\n','Error in the bissection algorithm');
+             error([txt]);
          end
-              AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
-              GradF = getSens(x_init + AlphaC*s, functionID);
-              PhiPrime = dot(GradF, s);
-              abs(PhiPrime);              
-              if(PhiPrime < 0)
-                  alpha_min = AlphaC;
-            elseif(PhiPrime > 0)
-                alpha_max = AlphaC;
-             end
+         AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
+         GradF = getSens(x_init + AlphaC*s, functionID);
+         PhiPrime = dot(GradF, s);
+         abs(PhiPrime);              
+         if(PhiPrime < 0)
+              alpha_min = AlphaC;
+         elseif(PhiPrime > 0)
+              alpha_max = AlphaC;
+         end
      end
-     alpha = AlphaC;
+     if(desc_dir==1)
+        alpha = AlphaC;
+     else
+        alpha = -AlphaC;   
+     end
+     %%%%%%%%%%%%%%%%%%%%
+     elseif functionID == 12
+     functionID = 1
+     desc_dir = 1;
+     alpha_min = 0;
+     h = 10;
+     epsilon = 1e-10;
+     rho = 0.5;
+     if(dot(df,s)>0)
+         desc_dir = 0;
+         s = - s;
+     end
+     GradF = getSens(x_init + (h)*s, functionID);
+     PhiPrime = dot(GradF, s);
+     while(PhiPrime <= 0)
+         alpha_min = h;
+         h = 2*h;  
+         GradF = getSens(x_init + (h)*s, functionID);     
+         PhiPrime = dot(GradF, s);
+     end
+     alpha_max = h;
+     AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
+     GradF = getSens(x_init + AlphaC*s, functionID);
+     PhiPrime = dot(GradF, s);
+     while(abs(PhiPrime) > epsilon)
+         if(dot(getSens(x_init + alpha_max*s, functionID),s)*dot(getSens(x_init + alpha_min*s, functionID),s)>0)
+             txt = sprintf('\n\n %s \n\n','Error in the bissection algorithm');
+             error([txt]);
+         end
+         AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
+         GradF = getSens(x_init + AlphaC*s, functionID);
+         PhiPrime = dot(GradF, s);
+         abs(PhiPrime);              
+         if(PhiPrime < 0)
+              alpha_min = AlphaC;
+         elseif(PhiPrime > 0)
+              alpha_max = AlphaC;
+         end
+     end
+     if(desc_dir==1)
+        alpha = AlphaC;
+     else
+        alpha = -AlphaC;   
+     end
  end
  %%% you can use reshape to only consider vector columns
