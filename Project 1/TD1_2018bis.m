@@ -33,7 +33,7 @@ prompt = '';
 ind = input(prompt);
 
 % Parameters --------------------------------------------------------------------------
-functionID = 1;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
+functionID = 2;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
                             % =2 if min f(x,y)= 2x^4 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
 MaxIter = 100;                 %Maximum number of iterations
 n=2;                        %Dimension of the problem
@@ -133,16 +133,23 @@ elseif ind==22
 elseif ind==3
     %% Newton 
     disp(' You chose the Newton method.');
-    for i=1:MaxIter   
+    for i=1:MaxIter
+        mu = 0.001;
         if(i==1)
             H=getHess(x(:,i), functionID);
             df = getSens(x(:,i),functionID);    
+        end
+        vp = eig(H);
+        while(vp(1)<=0||vp(2)<=0)
+            H = H+mu*eye(2,2);
+            vp = eig(H);
         end
         A = H^(-1);     
         alpha = 1;
         if(dot(df,-A*df)<0)  % Verify if it is a descent direction
             s = -A*df;
         else
+            eig(H)
             s = A*df; 
         end
         while (getObjFVal(x(:,i) + alpha*s ,functionID) > getObjFVal(x(:,i),functionID))
@@ -170,6 +177,10 @@ elseif ind==4
             H=eye(n);
             df = getSens(x(:,i),functionID);
         end  
+        vp = eig(H);
+        if(vp(1)<=0||vp(2)<=0)
+           error('La theorie est fausse') 
+        end
        s = -H*df;
        if functionID == 2
            alpha = getalpha(x(:,i),s,df,H,functionID);
