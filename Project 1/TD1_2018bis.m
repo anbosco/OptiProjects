@@ -33,9 +33,9 @@ prompt = '';
 ind = input(prompt);
 
 % Parameters --------------------------------------------------------------------------
-functionID = 2;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
+functionID = 1;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
                             % =2 if min f(x,y)= 2x^4 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
-MaxIter = 100;                 %Maximum number of iterations
+MaxIter = 100;              %Maximum number of iterations
 n=2;                        %Dimension of the problem
 xinit=reshape(xinit,2,1);   %Be sure it is a column vector
 Epsilon=1e-4;               %Tolerance
@@ -48,22 +48,22 @@ if ind==1
     %% Steepest descent
     disp(' You chose the steepest descent method.');    
     for i=1:MaxIter
-        if(i==1)
+        if(i==1)  % We comppute the Hessian and the gradient at the current iterate
         H=getHess(x(:,i), functionID);
         df = getSens(x(:,i),functionID);   
         end
-        s = -df;
+        s = -df;        % We use the opposite of the gradient at the current iterate as descent direction
         alpha = getalpha(x(:,i),s,df,H,functionID);
-        x(:,i+1) = x(:,i) +(alpha*s);
+        x(:,i+1) = x(:,i) +(alpha*s);       % Update of the iterate, the Hessian and the gradient
         H=getHess(x(:,i+1), functionID);
         df = getSens(x(:,i+1),functionID);
-        if(norm(df)<Epsilon)
+        if(norm(df)<Epsilon)                % Verify if the next iterate is a stationnary point of f.
             txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
             disp(txt);
             break;
         elseif(i==MaxIter)      
             txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
-            error([txt]);
+            error(txt);
         end  
     end
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step    
@@ -248,9 +248,9 @@ axis equal
 xlabel('$x_1$')
 ylabel('$x_2$')
 axis([lbx upx lby upy])
-title('Optimization path')
-[C,h]=contour(xi,xi,f,[-4:2:8 10:10:50 75:25:200],'linewidth', 2);
-clabel(C,h);
+[C,h]=contour(xi,xi,f,[-10:2:10 10:10:50 75:25:300],'linewidth', 2);
+colorbar;
+%  clabel(C,h);
 hold on
 ind=1;
 for i=1:size(x,2)-1
@@ -262,13 +262,13 @@ end
 plot(x(1,end),x(2,end),'.r','markersize',50)
 text(x(1,end),x(2,end),num2str(ind-1),'horizontalalignment','center','verticalalignment','middle','FontSize',14)
 
-
 function fval = getObjFVal(x,functionID)
  if functionID == 1
      fval = 2*(x(1))^2-3*(x(1)*x(2))+2*(x(2))^2 - 2*x(1)+10*x(2)-1;
  elseif functionID == 2
      fval = 2*x(1)^4 - 3*x(1)*x(2) + 2*x(2)^2 - 2*x(1) + 10*x(2) - 1;
  end
+
 
  function df = getSens(x, functionID)
  if functionID == 1
@@ -297,6 +297,8 @@ function fval = getObjFVal(x,functionID)
  function alpha = getalpha(x_init,s,df,H,functionID)
      %%%%%%%%%%%%%%%%%%
  if functionID == 1
+     % The function 1 being a stricly convex quadratic function, alpha can
+     % be determined by a simple formula.
     num = dot(df, s);
     den = (s.' * H * s);
     alpha = - num/den;
