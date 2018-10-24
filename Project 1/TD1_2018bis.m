@@ -41,6 +41,7 @@ xinit=reshape(xinit,2,1);   %Be sure it is a column vector
 Epsilon=1e-4;               %Tolerance
 x=zeros(n,MaxIter);         %Initialization of x
 x(:,1)=xinit;               %Put xinit in vector x.
+OF=zeros(1,MaxIter)         % Values of the objective function
 
 % Methods ------------------------------------------------
 
@@ -50,12 +51,13 @@ if ind==1
     for i=1:MaxIter
         if(i==1)  % We comppute the Hessian and the gradient at the current iterate
         H=getHess(x(:,i), functionID);
-        df = getSens(x(:,i),functionID);   
+        df = getSens(x(:,i),functionID); 
+        OF(i) = getObjFVal(x(:,i),functionID);
         end
         s = -df;        % We use the opposite of the gradient at the current iterate as descent direction
         alpha = getalpha(x(:,i),s,df,H,functionID);
-        x(:,i+1) = x(:,i) +(alpha*s);       % Update of the iterate, the Hessian and the gradient
-        H=getHess(x(:,i+1), functionID);
+        x(:,i+1) = x(:,i) +(alpha*s);       % Update of the iterate and the gradient  
+        OF(i+1) = getObjFVal(x(:,i+1),functionID);
         df = getSens(x(:,i+1),functionID);
         if(norm(df)<Epsilon)                % Verify if the next iterate is a stationnary point of f.
             txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
@@ -64,9 +66,11 @@ if ind==1
         elseif(i==MaxIter)      
             txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
             error(txt);
-        end  
+        end
+        H=getHess(x(:,i+1), functionID);    % Update the Hessian
     end
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step    
+    OF=OF(1,1:i+1);
 elseif ind==21
     %% Gradient method
     disp(' You chose the conjugate gradient method.')
@@ -261,6 +265,16 @@ for i=1:size(x,2)-1
 end
 plot(x(1,end),x(2,end),'.r','markersize',50)
 text(x(1,end),x(2,end),num2str(ind-1),'horizontalalignment','center','verticalalignment','middle','FontSize',14)
+
+figure('name','Objective function')
+Figure2=figure(2);clf;set(Figure2,'defaulttextinterpreter','latex');
+hold on;
+set(gca,'fontsize',30,'fontname','Times','LineWidth',0.5);
+plot(OF(1:end-1),'r','linewidth',3);
+plot(OF(1:end-1),'k.','markersize',25);
+grid;
+ylabel('Objective function');
+xlabel('Number of iteration');
 
 function fval = getObjFVal(x,functionID)
  if functionID == 1
