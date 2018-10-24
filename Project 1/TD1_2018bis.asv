@@ -33,7 +33,7 @@ prompt = '';
 ind = input(prompt);
 
 % Parameters --------------------------------------------------------------------------
-functionID = 1;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
+functionID = 2;             % =1 if min f(x,y)= 2x^2 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
                             % =2 if min f(x,y)= 2x^4 + 2y^2 - 3xy + 2y^2 - 2x + 10y - 1
 MaxIter = 100;              %Maximum number of iterations
 n=2;                        %Dimension of the problem
@@ -41,7 +41,8 @@ xinit=reshape(xinit,2,1);   %Be sure it is a column vector
 Epsilon=1e-4;               %Tolerance
 x=zeros(n,MaxIter);         %Initialization of x
 x(:,1)=xinit;               %Put xinit in vector x.
-OF=zeros(1,MaxIter)         % Values of the objective function
+OF=zeros(1,MaxIter);         % Values of the objective function
+nstep_bissection =z eros(1,MaxIter); % Number o
 
 % Methods ------------------------------------------------
 
@@ -55,11 +56,11 @@ if ind==1
         OF(i) = getObjFVal(x(:,i),functionID);
         end
         s = -df;        % We use the opposite of the gradient at the current iterate as descent direction
-        alpha = getalpha(x(:,i),s,df,H,functionID);
-        x(:,i+1) = x(:,i) +(alpha*s);       % Update of the iterate and the gradient  
+        [alpha,n_step] = getalpha(x(:,i),s,df,H,functionID);
+        x(:,i+1) = x(:,i) +(alpha*s);       % Update of the iterate, the objective function value and its gradient  
         OF(i+1) = getObjFVal(x(:,i+1),functionID);
         df = getSens(x(:,i+1),functionID);
-        if(norm(df)<Epsilon)                % Verify if the next iterate is a stationnary point of f.
+        if(norm(df)<Epsilon)                % Verify if the next iterate is a stationnary point of f.  
             txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
             disp(txt);
             break;
@@ -68,9 +69,17 @@ if ind==1
             error(txt);
         end
         H=getHess(x(:,i+1), functionID);    % Update the Hessian
-    end
+    end    
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step    
     OF=OF(1,1:i+1);
+    if(functionID==2)
+        for j = 1: i
+           rho(j) = abs(OF(j+1)-OF(end))/abs(OF(j)-OF(end))
+        end
+         n_lin = log((abs(OF(j+1)+22.142857142857142)/(abs(OF(1)+22.142857142857142))))/log(rho(round(i/2)))
+        n_iter_th = log((abs(OF(j+1)+22.142857142857142)/(abs(OF(1)+22.142857142857142))))/log(0.7346) % Only ok for f1
+
+    end
 elseif ind==21
     %% Gradient method
     disp(' You chose the conjugate gradient method.')
@@ -85,7 +94,7 @@ elseif ind==21
             beta = num/denom;
             d_k = -df_k + beta*d_k_1;            
         end
-        alpha = getalpha(x(:,i),d_k,df_k,H,functionID);
+        [alpha,n_step] = getalpha(x(:,i),d_k,df_k,H,functionID);
         x(:,i+1) = x(:,i) +(alpha*d_k);
         d_k_1 = d_k;
         df_k_1 = df_k;
@@ -117,7 +126,7 @@ elseif ind==22
             beta = num/denom;
             d_k = -df_k + beta*d_k_1; 
         end
-        alpha = getalpha(x(:,i),d_k,df_k,H,functionID);
+        [alpha,n_step] = getalpha(x(:,i),d_k,df_k,H,functionID);
         x(:,i+1) = x(:,i) +(alpha*d_k);
         d_k_1 = d_k;
         df_k_1 = df_k;
@@ -187,9 +196,9 @@ elseif ind==4
         end
        s = -H*df;
        if functionID == 2
-           alpha = getalpha(x(:,i),s,df,H,functionID);
+           [alpha,n_step] = getalpha(x(:,i),s,df,H,functionID);
        else
-           alpha = getalpha(x(:,i),s,df,H,12);
+           [alpha,n_step] = getalpha(x(:,i),s,df,H,12);
        end
        x(:,i+1) = x(:,i) + alpha*s;
        delta = x(:,i+1)-x(:,i);       
@@ -270,8 +279,11 @@ figure('name','Objective function')
 Figure2=figure(2);clf;set(Figure2,'defaulttextinterpreter','latex');
 hold on;
 set(gca,'fontsize',30,'fontname','Times','LineWidth',0.5);
-plot(OF,'b','linewidth',3);
-plot(OF,'linewidth',3);
+plot(OF(1:end-1),'r','linewidth',3);
+plot(OF(1:end-1),'k.','markersize',25);
+grid;
+ylabel('Objective function');
+xlabel('Number of iteration');
 
 function fval = getObjFVal(x,functionID)
  if functionID == 1
@@ -305,7 +317,8 @@ function fval = getObjFVal(x,functionID)
     H(2,2) = 4;
  end
 
- function alpha = getalpha(x_init,s,df,H,functionID)
+ function [alpha,n_step] = getalpha(x_init,s,df,H,functionID)
+     n_step = 0;
      %%%%%%%%%%%%%%%%%%
  if functionID == 1
      % The function 1 being a stricly convex quadratic function, alpha can
@@ -314,18 +327,19 @@ function fval = getObjFVal(x,functionID)
     den = (s.' * H * s);
     alpha = - num/den;
     %%%%%%%%%%%%%%%%%%%%
- elseif functionID == 2
-     desc_dir = 1;
+ elseif functionID == 2     
+     desc_dir = 1;      % 1 if the given direcion is indeed a descent direction
      alpha_min = 0;
      h = 10;
-     epsilon = 1e-10;
+     epsilon = 1e-8;
      rho = 0.5;
      if(dot(df,s)>0)
-         desc_dir = 0;
-         s = - s;
+         error('The given direction is not a descent direction');
+%          desc_dir = 0;
+%          s = - s;
      end
      GradF = getSens(x_init + (h)*s, functionID);
-     PhiPrime = dot(GradF, s);
+     PhiPrime = dot(GradF, s);  % directional derivative
      while(PhiPrime <= 0)
          alpha_min = h;
          h = 2*h;  
@@ -336,11 +350,12 @@ function fval = getObjFVal(x,functionID)
      AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
      GradF = getSens(x_init + AlphaC*s, functionID);
      PhiPrime = dot(GradF, s);
-     while(abs(PhiPrime) > epsilon)
+     while(abs(PhiPrime) > epsilon) % Bissection algorithm
          if(dot(getSens(x_init + alpha_max*s, functionID),s)*dot(getSens(x_init + alpha_min*s, functionID),s)>0)
              txt = sprintf('\n\n %s \n\n','Error in the bissection algorithm');
-             error([txt]);
+             error(txt);
          end
+         n_step = n_step+1;
          AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
          GradF = getSens(x_init + AlphaC*s, functionID);
          PhiPrime = dot(GradF, s);
@@ -351,11 +366,13 @@ function fval = getObjFVal(x,functionID)
               alpha_max = AlphaC;
          end
      end
-     if(desc_dir==1)
+%      if(desc_dir==1)
         alpha = AlphaC;
-     else
-        alpha = -AlphaC;   
-     end
+%      else
+%         alpha = -AlphaC;   
+%      end
+
+
      %%%%%%%%%%%%%%%%%%%%
      elseif functionID == 12
      functionID = 1
@@ -385,6 +402,7 @@ function fval = getObjFVal(x,functionID)
              txt = sprintf('\n\n %s \n\n','Error in the bissection algorithm');
              error([txt]);
          end
+         n_step = n_step+1;
          AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
          GradF = getSens(x_init + AlphaC*s, functionID);
          PhiPrime = dot(GradF, s);
