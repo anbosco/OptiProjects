@@ -74,12 +74,14 @@ if ind==1
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step    
     OF=OF(1,1:i+1);
     nstep_bissection = nstep_bissection(1,1:i+1);
+    
+     % Plot interesting information about the convergence
     if(functionID==1)
         for j = 1: i
-           rho(j) = abs(OF(j+1)-OF(end))/abs(OF(j)-OF(end));
+           rho(j) = abs(OF(j+1)-OF(end))/(abs(OF(j)-OF(end)));
         end
          n_lin = log((abs(OF(j+1)+22.142857142857142)/(abs(OF(1)+22.142857142857142))))/log(rho(round(i/2)))
-         n_iter_th = log((abs(OF(j+1)+22.142857142857142)/(abs(OF(1)+22.142857142857142))))/log(0.7346) % Only ok for f1
+          n_iter_th = log((abs(OF(j+1)+22.142857142857142)/(abs(OF(1)+22.142857142857142))))/log(0.5625) % Only ok for f1
     else
         for j = 1: i
          rho(j) = abs(OF(j+1)-OF(end))/abs(OF(j)-OF(end));
@@ -88,27 +90,27 @@ if ind==1
         
         Step_of_bissection = sum(nstep_bissection)
     end
+    
 elseif ind==21
-    %% Gradient method
+    %% Gradient method (Fletcher and Reeves)
     disp(' You chose the conjugate gradient method.')
     for i=1:MaxIter
-        if(i==1)
-            H = getHess(x(:,i), functionID);
+        if(i==1)    % Initialisation of the algorithm
+            H = getHess(x(:,i), functionID);% Useful only for f1 (line search)
             df_k = getSens(x(:,i),functionID);
             d_k = -df_k;
-        else
+        else        % Update of the descent direction (Fletcher and Reeves)
             num = norm(df_k)^2;
             denom = norm(df_k_1)^2;
             beta = num/denom;
             d_k = -df_k + beta*d_k_1;            
         end
-        [alpha,n_step] = getalpha(x(:,i),d_k,df_k,H,functionID);
-        x(:,i+1) = x(:,i) +(alpha*d_k);
-        d_k_1 = d_k;
+        [alpha,n_step] = getalpha(x(:,i),d_k,df_k,H,functionID);    % Line search method
+        x(:,i+1) = x(:,i) +(alpha*d_k);                             % Update of the iterate
+        d_k_1 = d_k;                                                
         df_k_1 = df_k;
-        H=getHess(x(:,i+1), functionID);
-        df_k = getSens(x(:,i+1),functionID);        
-        if(norm(df_k)<Epsilon)
+        df_k = getSens(x(:,i+1),functionID);                        % Update of the gradient     
+        if(norm(df_k)<Epsilon)  
             txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
             disp(txt);
             break;
@@ -120,26 +122,28 @@ elseif ind==21
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step
 
 elseif ind==22
-    %% Fletcher-Reeves
+    %% Gradient method (Polak-Ribiere)
     disp(' You chose the conjugate direction method using Fletcher-Reeves approximation.')
     
     for i=1:MaxIter
-        if i==1
-            H=getHess(x(:,i), functionID);
+        if i==1 % Initialisation of the algorithm
+            H=getHess(x(:,i), functionID);% Useful only for f1 (line search)
             df_k = getSens(x(:,i),functionID);   
             d_k = -df_k;
-        else
+            OF(i) = getObjFVal(x(:,i),functionID);
+        else % Update of the descent direction (Polak-Ribiere)
             num = dot(df_k,(df_k-df_k_1));
             denom = norm(df_k_1)^2;
             beta = num/denom;
             d_k = -df_k + beta*d_k_1; 
         end
-        [alpha,n_step] = getalpha(x(:,i),d_k,df_k,H,functionID);
-        x(:,i+1) = x(:,i) +(alpha*d_k);
+        [alpha,n_step] = getalpha(x(:,i),d_k,df_k,H,functionID);    % Line search method
+        x(:,i+1) = x(:,i) +(alpha*d_k);                             % Update of the iterate
+        nstep_bissection(i+1) = n_step;
+        OF(i+1) = getObjFVal(x(:,i+1),functionID);
         d_k_1 = d_k;
         df_k_1 = df_k;
-        H=getHess(x(:,i+1), functionID);
-        df_k = getSens(x(:,i+1),functionID);          
+        df_k = getSens(x(:,i+1),functionID);                        % Update of the gradient   
         if(norm(df_k)<Epsilon)
             txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
             disp(txt);
@@ -150,7 +154,18 @@ elseif ind==22
         end
     end
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step
+    OF=OF(1,1:i+1);
+    nstep_bissection = nstep_bissection(1,1:i+1);
 
+     % Plot interesting information about the convergence
+    if(functionID==2)
+        for j = 1: i
+         err(j) = (abs(OF(j)-OF(end)));
+         err_1(j) = abs(OF(j+1)-OF(end));
+        end
+        order = polyfit(log(err(1:end-1)),log(err_1(1:end-1)),1)      
+        Step_of_bissection = sum(nstep_bissection)
+    end
 elseif ind==3
     %% Newton 
     disp(' You chose the Newton method.');
@@ -287,8 +302,8 @@ figure('name','Objective function')
 Figure2=figure(2);clf;set(Figure2,'defaulttextinterpreter','latex');
 hold on;
 set(gca,'fontsize',30,'fontname','Times','LineWidth',0.5);
-plot(OF(1:end-1),'r','linewidth',3);
-plot(OF(1:end-1),'k.','markersize',25);
+plot(0:size(transpose(OF))-1, transpose(OF),'r','linewidth',3);
+plot(0:size(transpose(OF))-1,transpose(OF),'k.','markersize',25);
 grid;
 ylabel('Objective function');
 xlabel('Number of iteration');
@@ -342,13 +357,13 @@ function fval = getObjFVal(x,functionID)
      epsilon = 1e-8;
      rho = 0.5;
      if(dot(df,s)>0)
-         error('The given direction is not a descent direction');
-%          desc_dir = 0;
-%          s = - s;
+%          error('The given direction is not a descent direction');
+         desc_dir = 0;
+         s = - s;
      end
      GradF = getSens(x_init + (h)*s, functionID);
      PhiPrime = dot(GradF, s);  % directional derivative
-     while(PhiPrime <= 0)
+     while(PhiPrime <= 0)       % Find initial boundary
          alpha_min = h;
          h = 2*h;  
          GradF = getSens(x_init + (h)*s, functionID);     
@@ -363,6 +378,10 @@ function fval = getObjFVal(x,functionID)
              txt = sprintf('\n\n %s \n\n','Error in the bissection algorithm');
              error(txt);
          end
+          if(n_step>100)
+            warning('Precision of bissection was not reached for 1 iter');
+            break;
+         end
          n_step = n_step+1;
          AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
          GradF = getSens(x_init + AlphaC*s, functionID);
@@ -372,13 +391,15 @@ function fval = getObjFVal(x,functionID)
               alpha_min = AlphaC;
          elseif(PhiPrime > 0)
               alpha_max = AlphaC;
+         elseif(PhiPrime==0)
+             break;
          end
      end
-%      if(desc_dir==1)
+     if(desc_dir==1)
         alpha = AlphaC;
-%      else
-%         alpha = -AlphaC;   
-%      end
+     else
+        alpha = -AlphaC;   
+     end
 
 
      %%%%%%%%%%%%%%%%%%%%
@@ -387,7 +408,7 @@ function fval = getObjFVal(x,functionID)
      desc_dir = 1;
      alpha_min = 0;
      h = 10;
-     epsilon = 1e-10;
+     epsilon = 1e-8;
      rho = 0.5;
      if(dot(df,s)>0)
          desc_dir = 0;
@@ -409,6 +430,10 @@ function fval = getObjFVal(x,functionID)
          if(dot(getSens(x_init + alpha_max*s, functionID),s)*dot(getSens(x_init + alpha_min*s, functionID),s)>0)
              txt = sprintf('\n\n %s \n\n','Error in the bissection algorithm');
              error([txt]);
+         end
+         if(n_step>100 && abs(PhiPrime)< epsilon*1e3)
+            warning('Precision of bissection was not reached for 1 iter');
+            break;
          end
          n_step = n_step+1;
          AlphaC = rho*alpha_min +  (1-rho)*alpha_max;
