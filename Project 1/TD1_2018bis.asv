@@ -209,19 +209,21 @@ elseif ind==4
     %% BFGS
     disp(' You chose the quasi-Newton method (Boyden-Fletcher-Goldfard-Shanno (BFGS)).')
     for i=1:MaxIter
-        if(i==1)
+        if(i==1)                         %Initialisation of the algorithm
             H=eye(n);
             df = getSens(x(:,i),functionID);
         end  
-        vp = eig(H);
+        vp = eig(H);                    %Verification that H is positive definite
         if(vp(1)<=0||vp(2)<=0)
-           error('La theorie est fausse') 
+           error('The H matrix became non positive definite.') 
         end
        s = -H*df;
        if functionID == 2
            [alpha,n_step] = getalpha(x(:,i),s,df,H,functionID);
        else
-           [alpha,n_step] = getalpha(x(:,i),s,df,H,12);
+           %We still perform a line search for f1 because we don't compute
+           %explicitely the Hesian, so the formula can not be applied.
+           [alpha,n_step] = getalpha(x(:,i),s,df,H,12); 
        end
        x(:,i+1) = x(:,i) + alpha*s;
        delta = x(:,i+1)-x(:,i);       
@@ -378,7 +380,7 @@ function fval = getObjFVal(x,functionID)
              txt = sprintf('\n\n %s \n\n','Error in the bissection algorithm');
              error(txt);
          end
-          if(n_step>1000)
+          if(n_step>100)
             warning('Precision of bissection was not reached for 1 iter');
             break;
          end
@@ -432,7 +434,7 @@ function fval = getObjFVal(x,functionID)
              error([txt]);
          end
          if(n_step>100 && abs(PhiPrime)< epsilon*1e3)
-            warning('Precision of bissection has been decreased to 1e-5 for 1 iter');
+            warning('Precision of bissection was not reached for 1 iter');
             break;
          end
          n_step = n_step+1;

@@ -209,21 +209,23 @@ elseif ind==4
     %% BFGS
     disp(' You chose the quasi-Newton method (Boyden-Fletcher-Goldfard-Shanno (BFGS)).')
     for i=1:MaxIter
-        if(i==1)
+        if(i==1)                         %Initialisation of the algorithm
             H=eye(n);
             df = getSens(x(:,i),functionID);
         end  
-        vp = eig(H);
+        vp = eig(H);                    %Verification that H is positive definite
         if(vp(1)<=0||vp(2)<=0)
-           error('La theorie est fausse') 
+           error('The H matrix became non positive definite.') 
         end
        s = -H*df;
        if functionID == 2
            [alpha,n_step] = getalpha(x(:,i),s,df,H,functionID);
        else
-           [alpha,n_step] = getalpha(x(:,i),s,df,H,12);
+           %We still perform a line search for f1 because we don't compute
+           %explicitely the Hesian, so the formula can not be applied.
+           [alpha,n_step] = getalpha(x(:,i),s,df,H,12); 
        end
-       x(:,i+1) = x(:,i) + alpha*s;
+       x(:,i+1) = x(:,i) + alpha*s;     %Update of the iterate, of the gradient and of the matrix H.
        delta = x(:,i+1)-x(:,i);       
        df_futur = getSens(x(:,i+1),functionID);
        gamma = df_futur-df;
@@ -239,9 +241,9 @@ elseif ind==4
             txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
             disp(txt);
             break;
-%         elseif(i==MaxIter)      
-%             txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
-%             error([txt]);
+        elseif(i==MaxIter)      
+            txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
+            error([txt]);
         end 
     end
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step
