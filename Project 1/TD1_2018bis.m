@@ -226,6 +226,8 @@ elseif ind==4
            [alpha,n_step] = getalpha(x(:,i),s,df,H,12); 
        end
        x(:,i+1) = x(:,i) + alpha*s;     %Update of the iterate, of the gradient and of the matrix H.
+       nstep_bissection(i+1) = n_step;
+       OF(i+1) = getObjFVal(x(:,i+1),functionID);        
        delta = x(:,i+1)-x(:,i);       
        df_futur = getSens(x(:,i+1),functionID);
        gamma = df_futur-df;
@@ -247,6 +249,16 @@ elseif ind==4
         end 
     end
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step
+    OF=OF(1,1:i+1);
+    nstep_bissection = nstep_bissection(1,1:i+1);
+    
+    % Plot interesting information about the convergence
+        for j = 1: i
+            ORD_CONV(j) = norm((x(:,j+1)-x(:,end)))/norm((x(:,j)-x(:,end)));
+        end
+        ORD_CONV            %This decrease to 0(Superlinear convergence)
+        
+        Step_of_bissection = sum(nstep_bissection)
      
 else
     disp('Error: Your choice does not match the proposed methods.')

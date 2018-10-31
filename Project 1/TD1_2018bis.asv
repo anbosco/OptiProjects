@@ -225,7 +225,9 @@ elseif ind==4
            %explicitely the Hesian, so the formula can not be applied.
            [alpha,n_step] = getalpha(x(:,i),s,df,H,12); 
        end
-       x(:,i+1) = x(:,i) + alpha*s;
+       x(:,i+1) = x(:,i) + alpha*s;     %Update of the iterate, of the gradient and of the matrix H.
+       nstep_bissection(i+1) = n_step;
+       OF(i+1) = getObjFVal(x(:,i+1),functionID);        
        delta = x(:,i+1)-x(:,i);       
        df_futur = getSens(x(:,i+1),functionID);
        gamma = df_futur-df;
@@ -241,12 +243,24 @@ elseif ind==4
             txt = sprintf('\n\n %s %s \n\n','Number of itérations : ', num2str(i));
             disp(txt);
             break;
-%         elseif(i==MaxIter)      
-%             txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
-%             error([txt]);
+        elseif(i==MaxIter)      
+            txt = sprintf('\n\n %s %s \n\n','Impossible to reach the required precision in ', num2str(i));
+            error([txt]);
         end 
     end
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step
+    OF=OF(1,1:i+1);
+    nstep_bissection = nstep_bissection(1,1:i+1);
+    
+    % Plot interesting information about the convergence
+        for j = 1: i
+            ORD
+           rho(j) = abs(OF(j+1)-OF(end))/(abs(OF(j)-OF(end)));
+        end
+        rho
+        n_lin = log((abs(OF(j)-OF(end))/(abs(OF(1)-OF(end)))))/log(rho(round(i/2)))
+        
+        Step_of_bissection = sum(nstep_bissection)
      
 else
     disp('Error: Your choice does not match the proposed methods.')
