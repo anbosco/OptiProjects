@@ -51,7 +51,7 @@ if ind==1
     disp(' You chose the steepest descent method.');    
     for i=1:MaxIter
         if(i==1)  % We comppute the Hessian and the gradient at the current iterate
-        H=getHess(x(:,i), functionID);
+        H=getHess(x(:,i), functionID);      % Useful only for f1 (linesearch)
         df = getSens(x(:,i),functionID); 
         OF(i) = getObjFVal(x(:,i),functionID);
         end
@@ -107,6 +107,8 @@ elseif ind==21
         end
         [alpha,n_step] = getalpha(x(:,i),d_k,df_k,H,functionID);    % Line search method
         x(:,i+1) = x(:,i) +(alpha*d_k);                             % Update of the iterate
+        nstep_bissection(i+1) = n_step;
+        OF(i+1) = getObjFVal(x(:,i+1),functionID);
         d_k_1 = d_k;                                                
         df_k_1 = df_k;
         df_k = getSens(x(:,i+1),functionID);                        % Update of the gradient     
@@ -120,7 +122,10 @@ elseif ind==21
         end        
     end
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step
-
+    OF=OF(1,1:i+1);
+    nstep_bissection = nstep_bissection(1,1:i+1);
+    % Plot interesting information about the convergence      
+        Step_of_bissection = sum(nstep_bissection)
 elseif ind==22
     %% Gradient method (Polak-Ribiere)
     disp(' You chose the conjugate direction method using Fletcher-Reeves approximation.')
@@ -169,6 +174,7 @@ elseif ind==22
 elseif ind==3
     %% Newton 
     disp(' You chose the Newton method.');
+    nsb = 0;
     for i=1:MaxIter
         mu = 0.001;
         if(i==1)
@@ -190,6 +196,7 @@ elseif ind==3
         end
         while (getObjFVal(x(:,i) + alpha*s ,functionID) > getObjFVal(x(:,i),functionID))
             alpha = 0.5*alpha;
+            nsb = nsb +1;
         end
         x(:,i+1) = x(:,i) + alpha*s;  
         H=getHess(x(:,i+1), functionID);
@@ -204,7 +211,7 @@ elseif ind==3
         end 
     end
     x=x(:,1:i+1); %Remove the zero elements due to the initialization step
-    	
+    nsb	
 elseif ind==4
     %% BFGS
     disp(' You chose the quasi-Newton method (Boyden-Fletcher-Goldfard-Shanno (BFGS)).')
