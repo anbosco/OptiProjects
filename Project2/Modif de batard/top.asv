@@ -1,9 +1,6 @@
 %%%% A 99 LINE TOPOLOGY OPTIMIZATION CODE BY OLE SIGMUND, JANUARY 2000 %%%
 %%%% CODE MODIFIED FOR INCREASED SPEED, September 2002, BY OLE SIGMUND %%%
 function top(nelx,nely,volfrac,penal,rmin);
-Cont =1;
-dp = 0.5;
-close all;
 % INITIALIZE
 x(1:nely,1:nelx) = volfrac; 
 loop = 0; 
@@ -31,7 +28,7 @@ while change > 0.01
 % DESIGN UPDATE BY THE OPTIMALITY CRITERIA METHOD
   [x]    = OC(nelx,nely,x,volfrac,dc); 
   temp = 4*x.*(1-x);
-  Mnd = sum(sum(temp))/(length(x(:,1))*length(x(1,:)));
+  Mnd = sum(temp)/(length(x(:,1))*length(x(1,:)));
   Mnd = Mnd*100
 % PRINT RESULTS
   change = max(max(abs(x-xold)));
@@ -40,9 +37,6 @@ while change > 0.01
         ' ch.: ' sprintf('%6.3f',change )])
 % PLOT DENSITIES  
   colormap(gray); imagesc(-x); axis equal; axis tight; axis off;pause(1e-6);
-  if(Cont==1 && penal< 3 && mod(Loop,30)==0)
-     penal = penal+dp; 
-  end
 end 
 %%%%%%%%%% OPTIMALITY CRITERIA UPDATE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [xnew]=OC(nelx,nely,x,volfrac,dc)  
