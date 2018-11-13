@@ -19,19 +19,40 @@ edofMat = repmat(edofVec,1,8)+repmat([0 1 2*nely+[2 3 0 1] -2 -1],nelx*nely,1);
 iK = reshape(kron(edofMat,ones(8,1))',64*nelx*nely,1);
 jK = reshape(kron(edofMat,ones(1,8))',64*nelx*nely,1);
 % DEFINE LOADS AND SUPPORTS (HALF MBB-BEAM)
-% Cas normal
-% F = sparse(2,1,-1,2*(nely+1)*(nelx+1),1);
+%Load
+% F = sparse(2,1,-1,2*(nely+1)*(nelx+1),1); % CAS DE BASE
 % U = zeros(2*(nely+1)*(nelx+1),1);
+
+% F = sparse(1+(nely + 1)*(nelx + 1) - nely ,1,-2, 2*(nely+1)*(nelx+1),1);
+% U = zeros(2*(nely+1)*(nelx+1),1);         % CAS FORCE EQUIVALENT
+
+% F = sparse(round((2/3)*(nely+1)*(nelx) + 2) ,1,1, 2*(nely+1)*(nelx+1),1);
+% F(round((4/3)*(nely+1)*(nelx) + 2) ,1) = 1;
+% U = zeros(2*(nely+1)*(nelx+1),1);           % CAS 2 FORCES EN MEME TEMPS
+
+F = sparse(2*(nely+1)*(nelx+1),2);
+F(round((2/3)*(nely+1)*(nelx) + 2),1) = 1;
+F(round((4/3)*(nely+1)*(nelx) + 2),2) = -1;
+U = zeros(2*(nely+1)*(nelx+1),2);         % CAS 2 FORCES PAS EN MEME TEMPS
+
+% BC
 % fixeddofs = union([1:2:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
 % alldofs = [1:2*(nely+1)*(nelx+1)];
-% freedofs = setdiff(alldofs,fixeddofs);
+% freedofs = setdiff(alldofs,fixeddofs);      % CAS DE BASE
 
-%Cas home made attention c'est rater pour le moment
-F = sparse(2,1,-2,2*(nely+1)*(nelx+1),1);
-U = zeros(2*(nely+1)*(nelx+1),1);
-fixeddofs = union([1:2:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
+% fixeddofs = union([2*(nely+1)-1:2*(nely+1)],[2*(nelx+1)*(nely+1)-1:2*(nelx+1)*(nely+1)]);
+% alldofs = [1:2*(nely+1)*(nelx+1)];
+% freedofs = setdiff(alldofs,fixeddofs);      % CAS 2
+
+fixeddofs = union([2*(nely+1)-1:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
 alldofs = [1:2*(nely+1)*(nelx+1)];
-freedofs = setdiff(alldofs,fixeddofs);
+freedofs = setdiff(alldofs,fixeddofs);      % CAS 3
+
+% Plot BC
+gfix(nelx,nely,fixeddofs,F,[])
+figure;
+% error('On fait les BC putain')
+
 %% PREPARE FILTER
 iH = ones(nelx*nely*(2*(ceil(rmin)-1)+1)^2,1);
 jH = ones(size(iH));
@@ -64,11 +85,17 @@ while change > 0.01
   %% FE-ANALYSIS
   sK = reshape(KE(:)*(Emin+xPhys(:)'.^penal*(E0-Emin)),64*nelx*nely,1);
   K = sparse(iK,jK,sK); K = (K+K')/2;
-  U(freedofs) = K(freedofs,freedofs)\F(freedofs);
+
+  U(freedofs,:) = K(freedofs,freedofs)\F(freedofs,:);
   %% OBJECTIVE FUNCTION AND SENSITIVITY ANALYSIS
-  ce = reshape(sum((U(edofMat)*KE).*U(edofMat),2),nely,nelx);
+  c =0;
+  dc = 0;
+  for(i=1:size(F,2))
+  Ui = U(:,i);
+  ce = reshape(sum((Ui(edofMat)*KE).*Ui(edofMat),2),nely,nelx);
   c = sum(sum((Emin+xPhys.^penal*(E0-Emin)).*ce));
   dc = -penal*(E0-Emin)*xPhys.^(penal-1).*ce;
+  end
   dv = ones(nely,nelx);
   %% FILTERING/MODIFICATION OF SENSITIVITIES
   if ft == 1
