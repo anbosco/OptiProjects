@@ -53,6 +53,27 @@ gfix(nelx,nely,fixeddofs,F,[])
 figure;
 % error('On fait les BC putain')
 
+%% L-SHAPE  
+% METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
+% J'ai fait ça parce que sinon fallait commenter et décomenter
+% à plusieurs endroit dans le code (cfr. vers ligne 138)
+LSHAPE = 0;
+if LSHAPE == 1
+passive = zeros(nely,nelx);
+for i = 1:nelx
+  for j = 1:nely
+    if (i > round(0.4*nelx) && j < (0.6*nely))
+      passive(j,i) = 1;
+    end
+end 
+end
+
+% BC L-SHAPE
+fixeddofs = union([[0:2:0.4*nelx].*(nelx+1) + 2 + 2*(nely+1)],[2]);
+alldofs = [1:2*(nely)*(nelx+1)];
+freedofs = setdiff(alldofs,fixeddofs); 
+end
+
 %% PREPARE FILTER
 iH = ones(nelx*nely*(2*(ceil(rmin)-1)+1)^2,1);
 jH = ones(size(iH));
@@ -113,6 +134,10 @@ while change > 0.01
       xPhys = xnew;
     elseif ft == 2
       xPhys(:) = (H*xnew(:))./Hs;
+    end
+    if LSHAPE == 1
+    xPhys(passive==1) = 0;
+    xPhys(passive==2) = 1;
     end
     if sum(xPhys(:)) > volfrac*nelx*nely, l1 = lmid; else l2 = lmid; end
   end
