@@ -48,16 +48,11 @@ fixeddofs = union([2*(nely+1)-1:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
 alldofs = [1:2*(nely+1)*(nelx+1)];
 freedofs = setdiff(alldofs,fixeddofs);      % CAS 3
 
-% Plot BC
-gfix(nelx,nely,fixeddofs,F,[])
-figure;
-% error('On fait les BC putain')
-
 %% L-SHAPE  
 % METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
 % J'ai fait ça parce que sinon fallait commenter et décomenter
 % à plusieurs endroit dans le code (cfr. vers ligne 138)
-LSHAPE = 0;
+LSHAPE = 1;
 if LSHAPE == 1
 passive = zeros(nely,nelx);
 for i = 1:nelx
@@ -69,10 +64,16 @@ end
 end
 
 % BC L-SHAPE
-fixeddofs = union([[0:2:0.4*nelx].*(nelx+1) + 2 + 2*(nely+1)],[2]);
+% A MODIFIER, ELLE EST FAUSSE :( 
+fixeddofs = union([[0:2:(0.4*nelx+2)].*(nelx+1) + 2 + 2*(nely+1)],[2]);
 alldofs = [1:2*(nely)*(nelx+1)];
 freedofs = setdiff(alldofs,fixeddofs); 
 end
+
+% Plot BC
+gfix(nelx,nely,fixeddofs,F,[])
+figure;
+ error('On fait les BC putain')
 
 %% PREPARE FILTER
 iH = ones(nelx*nely*(2*(ceil(rmin)-1)+1)^2,1);
