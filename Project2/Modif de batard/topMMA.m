@@ -1,5 +1,5 @@
 %%%% AN 88 LINE TOPOLOGY OPTIMIZATION CODE Nov, 2010 %%%%
-function top88(nelx,nely,volfrac,penal,rmin,ft)
+function topMMA(nelx,nely,volfrac,penal,rmin,ft)
 close all;
 Cont =1;
 dp = 0.5;
@@ -25,14 +25,14 @@ jK = reshape(kron(edofMat,ones(1,8))',64*nelx*nely,1);
 
 % F = sparse(1+(nely + 1)*(nelx + 1) - nely ,1,-2, 2*(nely+1)*(nelx+1),1);
 % U = zeros(2*(nely+1)*(nelx+1),1);         % CAS FORCE EQUIVALENT
-% 
-% F = sparse(round((2/3)*(nely+1)*(nelx) + 2) ,1,-1, 2*(nely+1)*(nelx+1),1);
+
+% F = sparse(round((2/3)*(nely+1)*(nelx) + 2) ,1,1, 2*(nely+1)*(nelx+1),1);
 % F(round((4/3)*(nely+1)*(nelx) + 2) ,1) = 1;
 % U = zeros(2*(nely+1)*(nelx+1),1);           % CAS 2 FORCES EN MEME TEMPS
 
 F = sparse(2*(nely+1)*(nelx+1),2);
 F(round((2/3)*(nely+1)*(nelx) + 2),1) = 1;
-F(round((4/3)*(nely+1)*(nelx) + 2),2) = 1;
+F(round((4/3)*(nely+1)*(nelx) + 2),2) = -1;
 U = zeros(2*(nely+1)*(nelx+1),2);         % CAS 2 FORCES PAS EN MEME TEMPS
 
 % BC
@@ -52,23 +52,6 @@ freedofs = setdiff(alldofs,fixeddofs);      % CAS 3
 % METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
 % J'ai fait ça parce que sinon fallait commenter et décomenter
 % à plusieurs endroit dans le code (cfr. vers ligne 138)
-LSHAPE = 0;
-if LSHAPE == 1
-passive = zeros(nely,nelx);
-for i = 1:nelx
-  for j = 1:nely
-    if (i > round(0.4*nelx) && j < (0.6*nely))
-      passive(j,i) = 1;
-    end
-end 
-end
-
-% BC L-SHAPE
-% A MODIFIER, ELLE EST FAUSSE :( 
-fixeddofs = union([[0:2:(0.4*nelx+2)].*(nelx+1) + 2 + 2*(nely+1)],[2]);
-alldofs = [1:2*(nely)*(nelx+1)];
-freedofs = setdiff(alldofs,fixeddofs); 
-end
 
 % Plot BC
 gfix(nelx,nely,fixeddofs,F,[])
@@ -98,19 +81,29 @@ H = sparse(iH,jH,sH);
 Hs = sum(H,2);
 %% INITIALIZE ITERATION
 x = repmat(volfrac,nely,nelx);
+V0 = sum(sum(x));
 xPhys = x;
 loop = 0;
 change = 1;
+%% Init MMA
+  nVar = nelx*nely;
+  xmin = zeros(nelx*nely, 1);
+  xmax = ones(nelx*nely, 1);
+  low = zeros(nelx*nely,1);
+  upp = zeros(nelx*nely,1);
+  xold1 = zeros(nelx*nely,1);
+  xold2 = zeros(nelx*nely,1);
 %% START ITERATION
 while change > 0.01
+    c = 0;
+    dc = 0;
   loop = loop + 1;
   %% FE-ANALYSIS
   sK = reshape(KE(:)*(Emin+xPhys(:)'.^penal*(E0-Emin)),64*nelx*nely,1);
   K = sparse(iK,jK,sK); K = (K+K')/2;
+
   U(freedofs,:) = K(freedofs,freedofs)\F(freedofs,:);
   %% OBJECTIVE FUNCTION AND SENSITIVITY ANALYSIS
-    c = 0;
-    dc = 0;
   for(i=1:size(F,2))
   Ui = U(:,i);
   ce = reshape(sum((Ui(edofMat)*KE).*Ui(edofMat),2),nely,nelx);
@@ -125,33 +118,55 @@ while change > 0.01
     dc(:) = H*(dc(:)./Hs);
     dv(:) = H*(dv(:)./Hs);
   end
+  vol = sum(sum(xPhys.*dv));
+  vol = vol/V0;
+  mean(xPhys(:))
   %% OPTIMALITY CRITERIA UPDATE OF DESIGN VARIABLES AND PHYSICAL DENSITIES
   l1 = 0; l2 = 1e9; move = 0.2;
   %% 
+%   while (l2-l1)/(l1+l2) > 1e-3
+%     lmid = 0.5*(l2+l1);
+%     xnew = max(0,max(x-move,min(1,min(x+move,x.*sqrt(-dc./dv/lmid)))));
+%     iter = iter+1;    
+%     if ft == 1
+%       xPhys = xnew;
+%     elseif ft == 2
+%       xPhys(:) = (H*xnew(:))./Hs;
+%     end
+%     if LSHAPE == 1
+%     xPhys(passive==1) = 0;
+%     xPhys(passive==2) = 1;
+%     end
+%     if sum(xPhys(:)) > volfrac*nelx*nely, l1 = lmid; else l2 = lmid; end
+%     break;
+%   end
  
-  while (l2-l1)/(l1+l2) > 1e-3
-    lmid = 0.5*(l2+l1);
-    xnew = max(0,max(x-move,min(1,min(x+move,x.*sqrt(-dc./dv/lmid)))));
-     
-    if ft == 1
-      xPhys = xnew;
-    elseif ft == 2
-      xPhys(:) = (H*xnew(:))./Hs;
-    end
-    mean(xPhys(:))
-    if LSHAPE == 1
-    xPhys(passive==1) = 0;
-    xPhys(passive==2) = 1;
-    end
-    if sum(xPhys(:)) > volfrac*nelx*nely, l1 = lmid; else l2 = lmid; end
- end
-change = max(abs(xnew(:)-x(:)));
-x = xnew;
+  %% MMA
+  df0dx2 = 0;
+  fval = mean(xPhys(:)) - volfrac;
+  dfdx2 = 0;
+  nConstr = 1;
+  nVar = nelx*nely;
+  a0 = 1; a = 0; cmma = 1000; d = 0;
+  [xmma,ymma,zmma,lam,xsi,eta,mu,zet,s,low,upp] = ...
+mmasub(nConstr,nVar,loop,x(:),xmin,xmax,xold1,xold2, ...
+c,dc(:),df0dx2,fval,dv(:),dfdx2,low,upp,a0,a,cmma,d);
+    xold2 = xold1;
+    xold1 = x(:);
+    
+    xnew = reshape(xmma, nelx, nely);
   
-  % Coucou je suis pas efficace et je nique ton code
-    temp = 4*x.*(1-x);
-    Mnd = sum(sum(temp))/(length(x(:,1))*length(x(1,:)));
-    Mnd = Mnd*100;
+  change = max(abs(xnew(:)-x(:)));
+  if ft == 1
+      xPhys = xnew;
+  elseif ft == 2
+      xPhys(:) = (H*xnew(:))./Hs;
+  end
+  x = xnew;
+%   % Coucou je suis pas efficace et je nique ton code
+%     temp = 4*x.*(1-x);
+%     Mnd = sum(sum(temp))/(length(x(:,1))*length(x(1,:)));
+%     Mnd = Mnd*100;
   %% PRINT RESULTS
   fprintf(' It.:%5i Obj.:%11.4f Vol.:%7.3f ch.:%7.3f\n',loop,c, ...
     mean(xPhys(:)),change);
