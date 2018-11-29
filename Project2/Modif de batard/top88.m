@@ -53,16 +53,13 @@ U = zeros(2*(nely+1)*(nelx+1),2);         % CAS 2 FORCES PAS EN MEME TEMPS
 fixeddofs = union([2*(nely+1)-1:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
 alldofs = [1:2*(nely+1)*(nelx+1)];
 freedofs = setdiff(alldofs,fixeddofs);      % CAS 3
-<<<<<<< HEAD
 end
-=======
 
 %% L-SHAPE  
 % METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
 % J'ai fait ça parce que sinon fallait commenter et décomenter
 % à plusieurs endroit dans le code (cfr. vers ligne 138)
-LSHAPE = 0;
->>>>>>> 558e2d866589fff78e3f45fbc9af03a7629744ee
+LSHAPE = 1;
 if LSHAPE == 1
 passive = zeros(nely,nelx);
 for i = 1:nelx
@@ -91,11 +88,8 @@ end
 % Plot BC
 gfix(nelx,nely,fixeddofs,F,[])
 figure;
-<<<<<<< HEAD
 %  error('On fait les BC putain')
-=======
  %error('On fait les BC putain')
->>>>>>> 558e2d866589fff78e3f45fbc9af03a7629744ee
 
 %% PREPARE FILTER
 iH = ones(nelx*nely*(2*(ceil(rmin)-1)+1)^2,1);
