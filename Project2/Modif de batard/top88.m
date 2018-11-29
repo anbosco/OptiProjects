@@ -59,7 +59,6 @@ end
 % METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
 % J'ai fait ça parce que sinon fallait commenter et décomenter
 % à plusieurs endroit dans le code (cfr. vers ligne 138)
-LSHAPE = 1;
 if LSHAPE == 1
 passive = zeros(nely,nelx);
 for i = 1:nelx
@@ -73,14 +72,14 @@ end
 % BC L-SHAPE
 % A MODIFIER, ELLE EST FAUSSE :( 
 % fixeddofs = union([[0:2:(0.4*nelx+2)].*(nelx+1) + 2 + 2*(nely+1)],[2]);
-fixeddofs = union([2:2*nely+2:0.6*nelx*2*nely+1+2*nely+2],[1:2*nely+2:0.6*nelx*2*nely+1+2*nely+1]);
+fixeddofs = union([2:2*nely+2:0.4*nelx*2*nely+1+2*nely+2],[1:2*nely+2:0.4*nelx*2*nely+1+2*nely+1]);
 
-alldofs = [1:2*(nely)*(nelx+1)];
+alldofs = [1:2*(nely+1)*(nelx+1)];
 freedofs = setdiff(alldofs,fixeddofs); 
 
-F = sparse(2*(nelx+1)*(nely+1)-0.4*nely*2 ,1,100/(0.1*nely), 2*(nely+1)*(nelx+1),1);
+F = sparse(2*(nelx+1)*(nely+1)-0.4*nely*2 ,1,1/(0.1*nely), 2*(nely+1)*(nelx+1),1);
 for i = 2*(nelx+1)*(nely+1)-0.4*nely*2+2:2:2*(nelx+1)*(nely+1)-0.3*nely*2
-    F(i,1) = 100/(0.1*nely);
+    F(i,1) = 1/(0.1*nely);
 end
 U = zeros(2*(nely+1)*(nelx+1),1);           % CAS 2 FORCES EN MEME TEMPS
 end
