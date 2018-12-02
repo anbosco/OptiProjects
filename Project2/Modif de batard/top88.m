@@ -170,7 +170,7 @@ x = xnew;
   %% PRINT RESULTS
 %   fprintf(' It.:%5i Obj.:%11.4f Vol.:%7.3f ch.:%7.3f\n',loop,c, ...
 %     mean(xPhys(:)),change);
-  %% PLOT DENSITIES
+  % PLOT DENSITIES
 %   colormap(gray); imagesc(1-xPhys); caxis([0 1]); axis equal; axis off; drawnow;
   %% Continuation
   if(Cont==1 && penal< 3 && mod(loop,30)==0)
@@ -179,7 +179,7 @@ x = xnew;
   %% Saving compliance
   Compliance(loop)=c;
 end
-gfix(nelx,nely,fixeddofs,F,[])
+% gfix(nelx,nely,fixeddofs,F,[])
 % figure;
 % plot(Compliance);
 %
