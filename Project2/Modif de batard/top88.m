@@ -1,5 +1,5 @@
 %%%% AN 88 LINE TOPOLOGY OPTIMIZATION CODE Nov, 2010 %%%%
-function top88(nelx,nely,volfrac,penal,rmin,ft)
+function [xPhys, Mnd, loop, Compliance] = top88(nelx,nely,volfrac,penal,rmin,ft)
 close all;
 Cont =1;
 dp = 0.5;
@@ -22,7 +22,7 @@ jK = reshape(kron(edofMat,ones(1,8))',64*nelx*nely,1);
 % METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
 % J'ai fait ça parce que sinon fallait commenter et décomenter
 % à plusieurs endroit dans le code (cfr. vers ligne 138)
-LSHAPE = 1;
+LSHAPE = 0;
 if LSHAPE ==0
     % DEFINE LOADS AND SUPPORTS (HALF MBB-BEAM)
 %Load
@@ -168,10 +168,10 @@ x = xnew;
     Mnd = sum(sum(temp))/(length(x(:,1))*length(x(1,:)));
     Mnd = Mnd*100;
   %% PRINT RESULTS
-  fprintf(' It.:%5i Obj.:%11.4f Vol.:%7.3f ch.:%7.3f\n',loop,c, ...
-    mean(xPhys(:)),change);
+%   fprintf(' It.:%5i Obj.:%11.4f Vol.:%7.3f ch.:%7.3f\n',loop,c, ...
+%     mean(xPhys(:)),change);
   %% PLOT DENSITIES
-  colormap(gray); imagesc(1-xPhys); caxis([0 1]); axis equal; axis off; drawnow;
+%   colormap(gray); imagesc(1-xPhys); caxis([0 1]); axis equal; axis off; drawnow;
   %% Continuation
   if(Cont==1 && penal< 3 && mod(loop,30)==0)
      penal = penal+dp;      
@@ -180,8 +180,8 @@ x = xnew;
   Compliance(loop)=c;
 end
 gfix(nelx,nely,fixeddofs,F,[])
-figure;
-plot(Compliance);
+% figure;
+% plot(Compliance);
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This Matlab code was written by E. Andreassen, A. Clausen, M. Schevenels,%
