@@ -22,7 +22,7 @@ jK = reshape(kron(edofMat,ones(1,8))',64*nelx*nely,1);
 % METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
 % J'ai fait ça parce que sinon fallait commenter et décomenter
 % à plusieurs endroit dans le code (cfr. vers ligne 138)
-LSHAPE = 0;
+LSHAPE = 1;
 if LSHAPE ==0
     % DEFINE LOADS AND SUPPORTS (HALF MBB-BEAM)
 %Load
