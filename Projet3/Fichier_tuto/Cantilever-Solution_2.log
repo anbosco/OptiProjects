@@ -1,0 +1,56 @@
+SAMCEF: Running module bacon
+ User requested workspace             131000000 words  (    1048 MBytes)
+ Memory allocation / DB                65500000 /      65500000 words
+@@@CSH:SMGINI: BACON
+@@@CSH:SMGINT: PID =    17116 : Current Process ID
+ Release : 18.1 (18.1-01) - Date : 7-Jun-2017  (LONG INTEGERS)
+ Graphic driver used: Windows   
+ 
+  %%% SECURITY ERROR [LICENSE FILE] %%%
+  (8) UGS: Cannot checkout license
+  server 28000@pegase.ltas.ulg.ac.be reported for feature smcf_bacon: License server system does not support this feature.. (UGS error
+   -18)
+  %%% SECURITY ERROR [LICENSE FILE] %%%
+@@@CSH:SMGERR: E_NOLICENSE : No license available.
+0%%%E07-SMAIN, SEVERE ERROR NUMBER  20  -  CONTACT SAMCEF SUPPORT
+
+
+
+@@@CSH:SMGFIN: I_RUNABORT
+ -------------------------------------------------------------------------------
+ File size statistics
+ File name                                                            Size
+ -------------------------------------------------------------------------------
+ D...  Files\Siemens\NX 12.0\SIMULATION\samcef\Exec\pilote.dat      189154 Bytes
+ D... Files\Siemens\NX 12.0\SIMULATION\samcef\Exec\samcef.proc       84311 Bytes
+ -------------------------------------------------------------------------------
+SAMCEF: Module bacon completed
+SAMCEF: Running module asef
+@@@CSH:SMGINI: ASEF
+@@@CSH:SMGINT: PID =    11364 : Current Process ID
+@@@CSH:SMGSTG:  1 /  4 : Data Analysis
+@@@CSH:SMGSTG:  2 /  4 : Element Generation
+@@@CSH:SMGSTG:  3 /  4 : Frontal Resolution
+@@@CSH:SMGSTG:  4 /  4 : Stress Computation
+@@@CSH:SMGINT: NBRWRN =        1 : Number of warning(s)
+@@@CSH:SMGINT: NBRERR =        3 : Number of error(s)
+@@@CSH:SMGFIN: I_RUNABORT
+SAMCEF: Module asef completed
+ User requested workspace             131000000 words  (    1048 MBytes)
+@@@CSH:SMGINI: FAC
+@@@CSH:SMGINT: PID =     2340 : Current Process ID
+ Release : 18.1 (18.1-01) - Date : 7-Jun-2017  (LONG INTEGERS)
+0%%%E31-FMOAUS, OPEN ERROR (RCODE:  901 ) ON LOGICAL UNIT   1
+ FILE NAME:         <Cantilever-Solution_2_as.u18>
+ CURRENT DIRECTORY: <D:\Michel\Documents\Unif\Master2\Q1\Optimisation\OptiProjects\Projet3\Fichier_tuto>
+ SYSTEM ERROR:      <No error>
+ %%%ERROR 2 :
+ --------
+ Old Storage file can not be opened
+@@@CSH:SMGFIN: I_RUNSUCCESS
+ -------------------------------------------------------------------------------
+ File size statistics
+ File name                                                            Size
+ -------------------------------------------------------------------------------
+ D... Files\Siemens\NX 12.0\SIMULATION\samcef\Exec\samcef.proc       84311 Bytes
+ -------------------------------------------------------------------------------
