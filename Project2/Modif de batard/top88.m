@@ -22,12 +22,12 @@ jK = reshape(kron(edofMat,ones(1,8))',64*nelx*nely,1);
 % METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
 % J'ai fait ça parce que sinon fallait commenter et décomenter
 % à plusieurs endroit dans le code (cfr. vers ligne 138)
-LSHAPE = 1;
+LSHAPE = 0;
 if LSHAPE ==0
     % DEFINE LOADS AND SUPPORTS (HALF MBB-BEAM)
 %Load
-% F = sparse(2,1,-1,2*(nely+1)*(nelx+1),1); % CAS DE BASE
-% U = zeros(2*(nely+1)*(nelx+1),1);
+F = sparse(2,1,-1,2*(nely+1)*(nelx+1),1); % CAS DE BASE
+U = zeros(2*(nely+1)*(nelx+1),1);
 
 % F = sparse(1+(nely + 1)*(nelx + 1) - nely ,1,-2, 2*(nely+1)*(nelx+1),1);
 % U = zeros(2*(nely+1)*(nelx+1),1);         % CAS FORCE EQUIVALENT
@@ -36,23 +36,23 @@ if LSHAPE ==0
 % F(round((4/3)*(nely+1)*(nelx) + 2) ,1) = 1;
 % U = zeros(2*(nely+1)*(nelx+1),1);           % CAS 2 FORCES EN MEME TEMPS
 
-F = sparse(2*(nely+1)*(nelx+1),2);
-F(round((2/3)*(nely+1)*(nelx) + 2),1) = 1;
-F(round((4/3)*(nely+1)*(nelx) + 2),2) = 1;
-U = zeros(2*(nely+1)*(nelx+1),2);         % CAS 2 FORCES PAS EN MEME TEMPS
+% F = sparse(2*(nely+1)*(nelx+1),2);
+% F(round((2/3)*(nely+1)*(nelx) + 2),1) = 1;
+% F(round((4/3)*(nely+1)*(nelx) + 2),2) = 1;
+% U = zeros(2*(nely+1)*(nelx+1),2);         % CAS 2 FORCES PAS EN MEME TEMPS
 
-% BC
-% fixeddofs = union([1:2:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
-% alldofs = [1:2*(nely+1)*(nelx+1)];
-% freedofs = setdiff(alldofs,fixeddofs);      % CAS DE BASE
+%BC
+fixeddofs = union([1:2:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
+alldofs = [1:2*(nely+1)*(nelx+1)];
+freedofs = setdiff(alldofs,fixeddofs);      % CAS DE BASE
 
 % fixeddofs = union([2*(nely+1)-1:2*(nely+1)],[2*(nelx+1)*(nely+1)-1:2*(nelx+1)*(nely+1)]);
 % alldofs = [1:2*(nely+1)*(nelx+1)];
 % freedofs = setdiff(alldofs,fixeddofs);      % CAS 2
 
-fixeddofs = union([2*(nely+1)-1:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
-alldofs = [1:2*(nely+1)*(nelx+1)];
-freedofs = setdiff(alldofs,fixeddofs);      % CAS 3
+% fixeddofs = union([2*(nely+1)-1:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
+% alldofs = [1:2*(nely+1)*(nelx+1)];
+% freedofs = setdiff(alldofs,fixeddofs);      % CAS 3
 end
 
 %% L-SHAPE  

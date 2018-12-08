@@ -1,9 +1,10 @@
 %%%% A 110 LINE TOPOLOGY OPTIMIZATION CODE WITH HEAVISIDE FILTERING Nov, 2010%%%%
-function top110(nelx,nely,volfrac,penal,rmin,ft)
+function [xPhys, Mnd, loop, Compliance] = top110(nelx,nely,volfrac,penal,rmin,ft)
 %% MATERIAL PROPERTIES
 E0 = 1;
 Emin = 1e-9;
 nu = 0.3;
+LSHAPE = 1;
 %% PREPARE FINITE ELEMENT ANALYSIS
 A11 = [12  3 -6 -3;  3 12  3  0; -6  3 12 -3; -3  0 -3 12];
 A12 = [-6 -3  0  3; -3 -6 -3 -6;  0 -3 -6  3;  3 -6  3 -6];
@@ -16,11 +17,42 @@ edofMat = repmat(edofVec,1,8)+repmat([0 1 2*nely+[2 3 0 1] -2 -1],nelx*nely,1);
 iK = reshape(kron(edofMat,ones(8,1))',64*nelx*nely,1);
 jK = reshape(kron(edofMat,ones(1,8))',64*nelx*nely,1);
 % DEFINE LOADS AND SUPPORTS (HALF MBB-BEAM)
+if (LSHAPE==0)
 F = sparse(2,1,-1,2*(nely+1)*(nelx+1),1);
 U = zeros(2*(nely+1)*(nelx+1),1);
 fixeddofs = union([1:2:2*(nely+1)],[2*(nelx+1)*(nely+1)]);
 alldofs = [1:2*(nely+1)*(nelx+1)];
 freedofs = setdiff(alldofs,fixeddofs);
+else
+    passive = zeros(nely,nelx);
+for i = 1:nelx
+  for j = 1:nely
+    if (i > round(0.4*nelx) && j < (0.6*nely))
+      passive(j,i) = 1;
+    end
+end 
+end
+% BC L-SHAPE
+% A MODIFIER, ELLE EST FAUSSE :( 
+% fixeddofs = union([[0:2:(0.4*nelx+2)].*(nelx+1) + 2 + 2*(nely+1)],[2]);
+fixeddofs = union([2:2*nely+2:0.4*nelx*2*nely+1+2*nely+2],[1:2*nely+2:0.4*nelx*2*nely+1+2*nely+1]);
+
+alldofs = [1:2*(nely+1)*(nelx+1)];
+freedofs = setdiff(alldofs,fixeddofs); 
+
+F = sparse(2*(nelx+1)*(nely+1)-0.4*nely*2 ,1,1/(0.1*nely), 2*(nely+1)*(nelx+1),1);
+for i = 2*(nelx+1)*(nely+1)-0.4*nely*2+2:2:2*(nelx+1)*(nely+1)-0.3*nely*2
+    F(i,1) = 1/(0.1*nely);
+end
+U = zeros(2*(nely+1)*(nelx+1),1);           % CAS 2 FORCES EN MEME TEMPS
+end
+
+% Plot BC
+% gfix(nelx,nely,fixeddofs,F,[])
+% figure;
+%  error('On fait les BC putain')
+ %error('On fait les BC putain')
+
 %% PREPARE FILTER
 iH = ones(nelx*nely*(2*(ceil(rmin)-1)+1)^2,1);
 jH = ones(size(iH));
@@ -91,15 +123,25 @@ while change > 0.01
       xTilde(:) = (H*xnew(:))./Hs;
       xPhys = 1-exp(-beta*xTilde)+xTilde*exp(-beta);
     end
+    if LSHAPE == 1
+    xPhys(passive==1) = 0;
+    xPhys(passive==2) = 1;
+    end
     if sum(xPhys(:)) > volfrac*nelx*nely, l1 = lmid; else l2 = lmid; end
   end
   change = max(abs(xnew(:)-x(:)));
   x = xnew;
+    % Coucou je suis pas efficace et je nique ton code
+    temp = 4*xPhys.*(1-xPhys);
+    Mnd = sum(sum(temp))/(length(xPhys(:,1))*length(xPhys(1,:)));
+    Mnd = Mnd*100;
   %% PRINT RESULTS
-  fprintf(' It.:%5i Obj.:%11.4f Vol.:%7.3f ch.:%7.3f\n',loop,c, ...
-    mean(xPhys(:)),change);
+%   fprintf(' It.:%5i Obj.:%11.4f Vol.:%7.3f ch.:%7.3f\n',loop,c, ...
+%     mean(xPhys(:)),change);
+  %% Saving compliance
+  Compliance(loop)=c;
   %% PLOT DENSITIES
-  colormap(gray); imagesc(1-xPhys); caxis([0 1]); axis equal; axis off; drawnow;
+%   colormap(gray); imagesc(1-xPhys); caxis([0 1]); axis equal; axis off; drawnow;
   %% UPDATE HEAVISIDE REGULARIZATION PARAMETER
   if ft == 3 && beta < 512 && (loopbeta >= 50 || change <= 0.01)
     beta = 2*beta;
