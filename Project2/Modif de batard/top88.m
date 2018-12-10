@@ -1,5 +1,5 @@
 %%%% AN 88 LINE TOPOLOGY OPTIMIZATION CODE Nov, 2010 %%%%
-function [xPhys, Mnd, loop, Compliance] = top88(nelx,nely,volfrac,penal,rmin,ft)
+function [xPhys, Mnd, loop, Compliance, Svm ] = top88(nelx,nely,volfrac,penal,rmin,ft)
 close all;
 Cont =1;
 dp = 0.5;
@@ -18,10 +18,10 @@ edofVec = reshape(2*nodenrs(1:end-1,1:end-1)+1,nelx*nely,1);
 edofMat = repmat(edofVec,1,8)+repmat([0 1 2*nely+[2 3 0 1] -2 -1],nelx*nely,1);
 iK = reshape(kron(edofMat,ones(8,1))',64*nelx*nely,1);
 jK = reshape(kron(edofMat,ones(1,8))',64*nelx*nely,1);
-%% L-SHAPE  
-% METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
-% J'ai fait ça parce que sinon fallait commenter et décomenter
-% à plusieurs endroit dans le code (cfr. vers ligne 138)
+%% L-SHAPE
+% METTRE LSHAPE = 1 pour activer le cas avec LSHAPE
+% J'ai fait ï¿½a parce que sinon fallait commenter et dï¿½comenter
+% ï¿½ plusieurs endroit dans le code (cfr. vers ligne 138)
 LSHAPE = 0;
 if LSHAPE ==0
     % DEFINE LOADS AND SUPPORTS (HALF MBB-BEAM)
@@ -31,7 +31,7 @@ U = zeros(2*(nely+1)*(nelx+1),1);
 
 % F = sparse(1+(nely + 1)*(nelx + 1) - nely ,1,-2, 2*(nely+1)*(nelx+1),1);
 % U = zeros(2*(nely+1)*(nelx+1),1);         % CAS FORCE EQUIVALENT
-% 
+%
 % F = sparse(round((2/3)*(nely+1)*(nelx) + 2) ,1,-1, 2*(nely+1)*(nelx+1),1);
 % F(round((4/3)*(nely+1)*(nelx) + 2) ,1) = 1;
 % U = zeros(2*(nely+1)*(nelx+1),1);           % CAS 2 FORCES EN MEME TEMPS
@@ -55,10 +55,10 @@ freedofs = setdiff(alldofs,fixeddofs);      % CAS DE BASE
 % freedofs = setdiff(alldofs,fixeddofs);      % CAS 3
 end
 
-%% L-SHAPE  
-% METTRE LSHAPE = 1 pour activer le cas avec LSHAPE 
-% J'ai fait ça parce que sinon fallait commenter et décomenter
-% à plusieurs endroit dans le code (cfr. vers ligne 138)
+%% L-SHAPE
+% METTRE LSHAPE = 1 pour activer le cas avec LSHAPE
+% J'ai fait ï¿½a parce que sinon fallait commenter et dï¿½comenter
+% ï¿½ plusieurs endroit dans le code (cfr. vers ligne 138)
 if LSHAPE == 1
 passive = zeros(nely,nelx);
 for i = 1:nelx
@@ -66,16 +66,16 @@ for i = 1:nelx
     if (i > round(0.4*nelx) && j < (0.6*nely))
       passive(j,i) = 1;
     end
-end 
+end
 end
 
 % BC L-SHAPE
-% A MODIFIER, ELLE EST FAUSSE :( 
+% A MODIFIER, ELLE EST FAUSSE :(
 % fixeddofs = union([[0:2:(0.4*nelx+2)].*(nelx+1) + 2 + 2*(nely+1)],[2]);
 fixeddofs = union([2:2*nely+2:0.4*nelx*2*nely+1+2*nely+2],[1:2*nely+2:0.4*nelx*2*nely+1+2*nely+1]);
 
 alldofs = [1:2*(nely+1)*(nelx+1)];
-freedofs = setdiff(alldofs,fixeddofs); 
+freedofs = setdiff(alldofs,fixeddofs);
 
 F = sparse(2*(nelx+1)*(nely+1)-0.4*nely*2 ,1,1/(0.1*nely), 2*(nely+1)*(nelx+1),1);
 for i = 2*(nelx+1)*(nely+1)-0.4*nely*2+2:2:2*(nelx+1)*(nely+1)-0.3*nely*2
@@ -142,12 +142,12 @@ while change > 0.01
   end
   %% OPTIMALITY CRITERIA UPDATE OF DESIGN VARIABLES AND PHYSICAL DENSITIES
   l1 = 0; l2 = 1e9; move = 0.2;
-  %% 
- 
+  %%
+
   while (l2-l1)/(l1+l2) > 1e-3
     lmid = 0.5*(l2+l1);
     xnew = max(0,max(x-move,min(1,min(x+move,x.*sqrt(-dc./dv/lmid)))));
-     
+
     if ft == 1
       xPhys = xnew;
     elseif ft == 2
@@ -162,7 +162,7 @@ while change > 0.01
  end
 change = max(abs(xnew(:)-x(:)));
 x = xnew;
-  
+
   % Coucou je suis pas efficace et je nique ton code
     temp = 4*x.*(1-x);
     Mnd = sum(sum(temp))/(length(x(:,1))*length(x(1,:)));
@@ -174,10 +174,12 @@ x = xnew;
 %   colormap(gray); imagesc(1-xPhys); caxis([0 1]); axis equal; axis off; drawnow;
   %% Continuation
   if(Cont==1 && penal< 3 && mod(loop,30)==0)
-     penal = penal+dp;      
+     penal = penal+dp;
   end
   %% Saving compliance
   Compliance(loop)=c;
+end
+[Svm] = computestress(U,edofMat,E0,nu,penal,xPhys);
 end
 % gfix(nelx,nely,fixeddofs,F,[])
 % figure;
@@ -207,4 +209,3 @@ end
 % free from errors. Furthermore, we shall not be liable in any event       %
 % caused by the use of the program.                                        %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-

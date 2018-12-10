@@ -1,5 +1,5 @@
 %%%% AN 88 LINE TOPOLOGY OPTIMIZATION CODE Nov, 2010 %%%%
-function topMMA(nelx,nely,volfrac,penal,rmin,ft)
+function [xPhys, Mnd, loop, Compliance] = topMMA(nelx,nely,volfrac,penal,rmin,ft)
 close all;
 Cont =1;
 dp = 0.5;
@@ -93,10 +93,12 @@ change = 1;
   upp = zeros(nelx*nely,1);
   xold1 = zeros(nelx*nely,1);
   xold2 = zeros(nelx*nely,1);
+   df0dx2 = zeros(nelx*nely,1);
+    dfdx2 = zeros(nelx*nely,1);
+      a0mma = 1; amma = 0; cmma = 1000; dmma = 0;
 %% START ITERATION
 while change > 0.01
-    c = 0;
-    dc = 0;
+
   loop = loop + 1;
   %% FE-ANALYSIS
   sK = reshape(KE(:)*(Emin+xPhys(:)'.^penal*(E0-Emin)),64*nelx*nely,1);
@@ -104,6 +106,8 @@ while change > 0.01
 
   U(freedofs,:) = K(freedofs,freedofs)\F(freedofs,:);
   %% OBJECTIVE FUNCTION AND SENSITIVITY ANALYSIS
+   c = 0;
+   dc = 0;
   for(i=1:size(F,2))
   Ui = U(:,i);
   ce = reshape(sum((Ui(edofMat)*KE).*Ui(edofMat),2),nely,nelx);
@@ -118,9 +122,7 @@ while change > 0.01
     dc(:) = H*(dc(:)./Hs);
     dv(:) = H*(dv(:)./Hs);
   end
-  vol = sum(sum(xPhys.*dv));
-  vol = vol/V0;
-  mean(xPhys(:))
+
   %% OPTIMALITY CRITERIA UPDATE OF DESIGN VARIABLES AND PHYSICAL DENSITIES
   l1 = 0; l2 = 1e9; move = 0.2;
   %% 
@@ -142,19 +144,17 @@ while change > 0.01
 %   end
  
   %% MMA
-  df0dx2 = 0;
-  fval = mean(xPhys(:)) - volfrac;
-  dfdx2 = 0;
+ % fval = mean(xPhys(:)) - volfrac;
+  fval = (sum(sum(xPhys)))/(nVar*volfrac) - 1;
+  dfdx = (dv(:))/(nVar*volfrac);
   nConstr = 1;
-  nVar = nelx*nely;
-  a0 = 1; a = 0; cmma = 1000; d = 0;
-  [xmma,ymma,zmma,lam,xsi,eta,mu,zet,s,low,upp] = ...
+  [xmma,~,~,~,~,~,~,~,~,low,upp] = ...
 mmasub(nConstr,nVar,loop,x(:),xmin,xmax,xold1,xold2, ...
-c,dc(:),df0dx2,fval,dv(:),dfdx2,low,upp,a0,a,cmma,d);
+c,dc(:),df0dx2,fval,dfdx,dfdx2,low,upp,a0mma,amma,cmma,dmma);
     xold2 = xold1;
     xold1 = x(:);
     
-    xnew = reshape(xmma, nelx, nely);
+    xnew = reshape(xmma, nely, nelx);
   
   change = max(abs(xnew(:)-x(:)));
   if ft == 1
@@ -164,14 +164,14 @@ c,dc(:),df0dx2,fval,dv(:),dfdx2,low,upp,a0,a,cmma,d);
   end
   x = xnew;
 %   % Coucou je suis pas efficace et je nique ton code
-%     temp = 4*x.*(1-x);
-%     Mnd = sum(sum(temp))/(length(x(:,1))*length(x(1,:)));
-%     Mnd = Mnd*100;
+     temp = 4*x.*(1-x);
+     Mnd = sum(sum(temp))/(length(x(:,1))*length(x(1,:)));
+     Mnd = Mnd*100;
   %% PRINT RESULTS
-  fprintf(' It.:%5i Obj.:%11.4f Vol.:%7.3f ch.:%7.3f\n',loop,c, ...
-    mean(xPhys(:)),change);
+ % fprintf(' It.:%5i Obj.:%11.4f Vol.:%7.3f ch.:%7.3f\n',loop,c, ...
+ %   mean(xPhys(:)),change);
   %% PLOT DENSITIES
-  colormap(gray); imagesc(1-xPhys); caxis([0 1]); axis equal; axis off; drawnow;
+ % colormap(gray); imagesc(1-xPhys); caxis([0 1]); axis equal; axis off; drawnow;
   %% Continuation
   if(Cont==1 && penal< 3 && mod(loop,30)==0)
      penal = penal+dp;      
@@ -179,9 +179,6 @@ c,dc(:),df0dx2,fval,dv(:),dfdx2,low,upp,a0,a,cmma,d);
   %% Saving compliance
   Compliance(loop)=c;
 end
-gfix(nelx,nely,fixeddofs,F,[])
-figure;
-plot(Compliance);
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This Matlab code was written by E. Andreassen, A. Clausen, M. Schevenels,%

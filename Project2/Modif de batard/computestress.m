@@ -28,7 +28,7 @@ SEQ    = (sum((U(edofMat)*M).*U(edofMat),2)).^0.5;
 Svm    = xPhys;
 Svm(:) = SEQ(:).*xPhys(:).^penal;
 %-------------------------------------------------------
-subplot(2,1,1)
-colormap(gca,'gray'); imagesc(1-xPhys); colorbar; caxis([0 1]); axis equal; axis off; drawnow;
-subplot(2,1,2)
-colormap(gca,'jet'); imagesc(Svm); colorbar; axis equal; axis off; drawnow;
+% subplot(2,1,1)
+% colormap(gca,'gray'); imagesc(1-xPhys); colorbar; caxis([0 1]); axis equal; axis off; drawnow;
+% subplot(2,1,2)
+% colormap(gca,'jet'); imagesc(Svm); colorbar; axis equal; axis off; drawnow;
